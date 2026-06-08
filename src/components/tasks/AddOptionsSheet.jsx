@@ -1,48 +1,109 @@
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { X, ClipboardList, FolderKanban, AlertTriangle, Database, FileSpreadsheet } from "lucide-react";
+import { motion } from "framer-motion";
+
+const options = [
+  {
+    id: "task",
+    title: "Nova atividade",
+    description: "Criar uma atividade manualmente",
+    icon: ClipboardList,
+    color: "text-cyan-300 bg-cyan-500/15 border-cyan-500/20",
+  },
+  {
+    id: "project",
+    title: "Novo projeto",
+    description: "Criar agrupador de atividades",
+    icon: FolderKanban,
+    color: "text-orange-300 bg-orange-500/15 border-orange-500/20",
+  },
+  {
+    id: "problem",
+    title: "Novo problema",
+    description: "Registrar problema vinculado",
+    icon: AlertTriangle,
+    color: "text-red-300 bg-red-500/15 border-red-500/20",
+  },
+  {
+    id: "knowledge",
+    title: "Nova base",
+    description: "Registrar informação útil",
+    icon: Database,
+    color: "text-emerald-300 bg-emerald-500/15 border-emerald-500/20",
+  },
+];
 
 export default function AddOptionsSheet({ app }) {
-  function openAdd(mode) {
+  function openMode(mode) {
     app.setQuickMode(mode);
     app.setShowAddOptions(false);
     app.setShowQuickAdd(true);
   }
 
   return (
-    <div className="fixed inset-0 z-40 bg-black/60">
-      <div className="absolute bottom-0 left-1/2 w-full max-w-md -translate-x-1/2 rounded-t-[2rem] border border-slate-800 bg-slate-900 p-4 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm">
+      <motion.div
+        initial={{ y: 260, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
+        className="w-full rounded-t-[36px] border-t border-slate-800 bg-slate-950 p-4 shadow-2xl"
+      >
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500">Adicionar</p>
-            <h2 className="text-lg font-bold text-white">Escolha o tipo</h2>
+            <h2 className="text-lg font-bold text-white">Adicionar</h2>
+            <p className="text-sm text-slate-500">Escolha o que deseja criar</p>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-slate-300"
+          <button
             onClick={() => app.setShowAddOptions(false)}
+            className="rounded-2xl bg-slate-900 p-3 text-slate-400"
           >
             <X className="h-5 w-5" />
-          </Button>
+          </button>
         </div>
 
-        <div className="grid gap-3">
-          <AddOption label="Atividade / Subatividade" description="Criar ação com início, fim, responsável e andamento" onClick={() => openAdd("task")} />
-          <AddOption label="Projeto" description="Criar novo agrupador de atividades" onClick={() => openAdd("project")} />
-          <AddOption label="Problema" description="Registrar problema ou impedimento" onClick={() => openAdd("problem")} />
-          <AddOption label="Base" description="Salvar conhecimento ou anotação útil" onClick={() => openAdd("knowledge")} />
+        <div className="grid grid-cols-2 gap-3">
+          {options.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => openMode(item.id)}
+                className={`rounded-[26px] border p-4 text-left ${item.color}`}
+              >
+                <Icon className="mb-3 h-6 w-6" />
+
+                <h3 className="text-sm font-bold text-white">{item.title}</h3>
+
+                <p className="mt-1 text-xs text-slate-400">
+                  {item.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
-      </div>
+
+        <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-[26px] border border-blue-500/20 bg-blue-500/10 p-4 text-blue-300">
+          <FileSpreadsheet className="h-6 w-6" />
+
+          <div>
+            <h3 className="text-sm font-bold text-white">Importar Excel</h3>
+            <p className="text-xs text-slate-400">
+              Criar projetos e atividades automaticamente
+            </p>
+          </div>
+
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(event) => {
+              app.importActivitiesFromExcel(event);
+              app.setShowAddOptions(false);
+            }}
+          />
+        </label>
+      </motion.div>
     </div>
-  );
-}
-
-function AddOption({ label, description, onClick }) {
-  return (
-    <button onClick={onClick} className="rounded-3xl border border-slate-800 bg-slate-950 p-4 text-left hover:bg-slate-800">
-      <p className="font-semibold text-white">{label}</p>
-      <p className="mt-1 text-sm text-slate-400">{description}</p>
-    </button>
   );
 }

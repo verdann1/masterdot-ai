@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import InputDark from "../common/InputDark";
 import TextareaDark from "../common/TextareaDark";
 import SelectField from "../common/SelectField";
+import ResponsiblesInput from "../common/ResponsiblesInput";
 
 // ─── step indicator ───────────────────────────────────────────────────────────
 
@@ -93,12 +94,11 @@ function TaskForm({ app, onClose }) {
 
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              Responsável
+              Responsáveis
             </p>
-            <InputDark
-              placeholder="Nome do responsável"
-              value={form.responsible}
-              onChange={(e) => set("responsible", e.target.value)}
+            <ResponsiblesInput
+              value={form.responsibles ?? []}
+              onChange={(arr) => set("responsibles", arr)}
             />
           </div>
 

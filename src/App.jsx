@@ -19,6 +19,14 @@ import EditTaskSheet from "./components/tasks/EditTaskSheet";
 import QuickAddSheet from "./components/tasks/QuickAddSheet";
 import AddOptionsSheet from "./components/tasks/AddOptionsSheet";
 
+import PageTransition from "./components/common/PageTransition";
+
+import ImportPreviewSheet from "./components/tasks/ImportPreviewSheet";
+
+import ProductionScreen from "./screens/ProductionScreen";
+
+import { Toaster } from "sonner";
+
 export default function App() {
   const app = useMasterDot();
 
@@ -46,17 +54,20 @@ export default function App() {
     kanban: <KanbanScreen app={app} />,
     problems: <ProblemsScreen app={app} />,
     knowledge: <KnowledgeScreen app={app} />,
+    production: <ProductionScreen app={app} />,
     ai: <AiAssistantScreen app={app} />,
     settings: <SettingsScreen app={app} />,
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-950">
-        <AppHeader activeTab={app.activeTab} setActiveTab={app.setActiveTab} />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_55%)] text-slate-100">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-transparent">
+        <AppHeader activeTab={app.activeTab} setActiveTab={app.setActiveTab} isOnline={app.isOnline} />
 
-        <main className="flex-1 space-y-4 overflow-y-auto px-4 pb-28 pt-4">
-          {screens[app.activeTab] || screens.home}
+        <main className="flex-1 overflow-y-auto px-4 pb-32 pt-4">
+          <PageTransition key={app.activeTab}>
+            {screens[app.activeTab] || screens.home}
+          </PageTransition>
         </main>
 
         <BottomNav
@@ -67,9 +78,16 @@ export default function App() {
 
         {app.showAddOptions && <AddOptionsSheet app={app} />}
         {app.showQuickAdd && <QuickAddSheet app={app} />}
+        {app.importPreview && <ImportPreviewSheet app={app} />}
         {app.editingTask && <EditTaskSheet app={app} />}
         {app.selectedTaskId && <TaskDetailSheet app={app} />}
       </div>
+      <Toaster
+        position="top-center"
+        richColors
+        closeButton
+        duration={2500}
+      />
     </div>
   );
 }

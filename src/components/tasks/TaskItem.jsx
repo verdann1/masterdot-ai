@@ -67,17 +67,26 @@ export default function TaskItem({ app, task, compact, child = false }) {
             <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-600" />
           </div>
 
-          {/* Project + responsible */}
+          {/* Project + responsibles */}
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
             {task.project && (
               <span className="text-[11px] text-slate-500">{task.project}</span>
             )}
-            {task.responsible && (
-              <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                <User className="h-2.5 w-2.5" />
-                {task.responsible}
-              </span>
-            )}
+            {(() => {
+              const list = Array.isArray(task.responsibles) && task.responsibles.length
+                ? task.responsibles
+                : task.responsible
+                ? [task.responsible]
+                : [];
+              if (!list.length) return null;
+              return (
+                <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                  <User className="h-2.5 w-2.5" />
+                  {list.slice(0, 2).join(", ")}
+                  {list.length > 2 && ` +${list.length - 2}`}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Progress bar — show if has explicit progress or checklist */}

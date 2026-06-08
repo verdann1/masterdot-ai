@@ -1,59 +1,99 @@
-import { Bell, BrainCircuit, Download, Upload } from "lucide-react";
+import { Bell, Bot, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DarkCard from "../components/common/DarkCard";
 
 export default function SettingsScreen({ app }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <DarkCard>
-        <h3 className="font-semibold text-white">Resumo local</h3>
+        <h2 className="text-lg font-bold text-white">Alertas</h2>
 
-        <p className="text-sm text-slate-300">
-          <b>Atividades:</b> {app.tasks.length}
-        </p>
-        <p className="text-sm text-slate-300">
-          <b>Projetos:</b> {app.projects.length}
-        </p>
-        <p className="text-sm text-slate-300">
-          <b>Problemas:</b> {app.problems.length}
-        </p>
-        <p className="text-sm text-slate-300">
-          <b>Base:</b> {app.knowledge.length}
+        <p className="mt-1 text-sm text-slate-500">
+          Ative notificações locais para atividades atrasadas, críticas e
+          vencimentos próximos.
         </p>
 
-        <p className="pt-2 text-xs text-slate-500">Dados salvos localmente no app.</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl bg-slate-950 p-3 text-center">
+            <p className="text-xs text-slate-500">Atrasadas</p>
+            <p className="text-xl font-bold text-red-300">
+              {app.taskAlerts?.late?.length || 0}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-slate-950 p-3 text-center">
+            <p className="text-xs text-slate-500">Hoje</p>
+            <p className="text-xl font-bold text-cyan-300">
+              {app.taskAlerts?.todayDue?.length || 0}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-slate-950 p-3 text-center">
+            <p className="text-xs text-slate-500">Críticas</p>
+            <p className="text-xl font-bold text-orange-300">
+              {app.taskAlerts?.critical?.length || 0}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-slate-950 p-3 text-center">
+            <p className="text-xs text-slate-500">7 dias</p>
+            <p className="text-xl font-bold text-blue-300">
+              {app.taskAlerts?.next7?.length || 0}
+            </p>
+          </div>
+        </div>
+
+        <Button
+          className="mt-4 h-11 w-full rounded-2xl bg-cyan-500 text-white"
+          onClick={app.enableNotifications}
+        >
+          <Bell className="mr-2 h-4 w-4" />
+          Ativar notificações
+        </Button>
       </DarkCard>
 
-      <Button onClick={app.enableNotifications} className="h-12 w-full rounded-2xl bg-blue-500 text-white hover:bg-blue-400">
-        <Bell className="mr-2 h-4 w-4" />
-        Ativar notificações
-      </Button>
+      <DarkCard>
+        <h2 className="text-lg font-bold text-white">Inteligência Artificial</h2>
 
-      <Button onClick={app.applyAiPriority} className="h-12 w-full rounded-2xl bg-purple-500 text-white hover:bg-purple-400">
-        <BrainCircuit className="mr-2 h-4 w-4" />
-        Priorizar com IA local
-      </Button>
-      
-      <Button onClick={app.logout} className="h-12 w-full rounded-2xl bg-red-500 text-white hover:bg-red-400">
-       Sair da conta
-      </Button>
+        <p className="mt-1 text-sm text-slate-500">
+          Use a IA para recalcular prioridades das atividades.
+        </p>
 
-      <label className="flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-100 text-sm font-medium text-slate-950 hover:bg-white">
-        <Upload className="mr-2 h-4 w-4" />
-        Importar atividades Excel
-        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={app.importActivitiesFromExcel} />
-      </label>
+        <div className="mt-4 space-y-2">
+          <Button
+            className="h-11 w-full rounded-2xl bg-purple-500 text-white"
+            onClick={app.applyAiPriority}
+          >
+            <Bot className="mr-2 h-4 w-4" />
+            IA Priority
+          </Button>
 
-      <label className="flex h-12 w-full cursor-pointer items-center justify-center rounded-2xl bg-slate-800 text-sm font-medium text-slate-100 hover:bg-slate-700">
-        <Upload className="mr-2 h-4 w-4" />
-        Importar backup JSON
-        <input type="file" accept=".json" className="hidden" onChange={app.importBackup} />
-      </label>
+          <Button
+            variant="outline"
+            className="h-11 w-full rounded-2xl border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
+            onClick={() => app.setActiveTab("ai")}
+          >
+            Abrir Assistente IA
+          </Button>
+        </div>
+      </DarkCard>
 
-      <Button onClick={app.exportBackup} className="h-12 w-full rounded-2xl bg-slate-800 text-slate-100 hover:bg-slate-700">
-        <Download className="mr-2 h-4 w-4" />
-        Exportar backup
-      </Button>
+      <DarkCard>
+        <h2 className="text-lg font-bold text-white">Conta</h2>
+
+        <p className="mt-1 text-sm text-slate-500">
+          Sair da conta atual do Master DOT.
+        </p>
+
+        <Button
+          variant="outline"
+          className="mt-4 h-11 w-full rounded-2xl border-red-500/40 bg-red-500/10 text-red-300"
+          onClick={app.logout}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </DarkCard>
     </div>
   );
 }
