@@ -6,7 +6,9 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
   deleteDoc,
+  getDoc,
   onSnapshot,
   serverTimestamp,
   query,
@@ -58,39 +60,160 @@ function cleanData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
-async function ensureUserDoc(user) {
-  if (!user?.uid) return;
+// ── Workspace / contas ────────────────────────────────────────────────────────
+// Modelo: workspace único compartilhado. tasks/projects/problems/knowledge ficam
+// em coleções de topo (todos os membros ativos veem). tt_* (Ponto) permanece por
+// usuário (dado sensível de RH).
+export const ADMIN_EMAIL = "verdanmatheus@outlook.com";
+export const ROLES = ["admin", "gestor", "colaborador"];
 
-  await setDoc(
-    doc(db, "users", user.uid),
-    {
-      uid: user.uid,
-      email: user.email || "",
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
+const SHARED = new Set(["tasks", "projects", "problems", "knowledge"]);
+
+function emailKey(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function colRef(userId, name) {
+  return SHARED.has(name)
+    ? collection(db, name)
+    : collection(db, "users", userId, name);
+}
+
+function docRef(userId, name, id) {
+  return SHARED.has(name)
+    ? doc(db, name, String(id))
+    : doc(db, "users", userId, name, String(id));
+}
+
+// Cria/garante o doc de membership do usuário e retorna { role, status, ... }.
+// Bootstrap: ADMIN_EMAIL vira admin ativo; convidado entra com o papel do convite;
+// demais entram como colaborador "pending" (aguardando aprovação do admin).
+export async function ensureMembership(user) {
+  if (!user?.uid) return null;
+  const memberRef = doc(db, "members", user.uid);
+  const snap = await getDoc(memberRef);
+  if (snap.exists()) return snap.data();
+
+  const email = emailKey(user.email);
+  let role = "colaborador";
+  let status = "pending";
+
+  if (email === emailKey(ADMIN_EMAIL)) {
+    role = "admin";
+    status = "active";
+  } else {
+    // Convite pendente?
+    try {
+      const invSnap = await getDoc(doc(db, "invites", email));
+      if (invSnap.exists()) {
+        role = invSnap.data().role || "colaborador";
+        status = "active";
+      }
+    } catch {
+      /* sem permissão de leitura de convites como não-membro: segue como pending */
+    }
+  }
+
+  const member = {
+    uid: user.uid,
+    email: user.email || "",
+    name: user.displayName || (user.email ? user.email.split("@")[0] : ""),
+    role,
+    status,
+    createdAt: new Date().toISOString(),
+  };
+  await setDoc(memberRef, { ...member, updatedAt: serverTimestamp() }, { merge: true });
+
+  // Convite consumido: remove (permitido ao próprio e-mail convidado pelas rules).
+  if (status === "active" && role !== "admin" && email !== emailKey(ADMIN_EMAIL)) {
+    try { await deleteDoc(doc(db, "invites", email)); } catch { /* ok */ }
+  }
+
+  return member;
+}
+
+export async function getMembership(uid) {
+  if (!uid) return null;
+  const snap = await getDoc(doc(db, "members", uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+export function subscribeMembers(callback, onError) {
+  return onSnapshot(
+    collection(db, "members"),
+    (snap) => callback(snap.docs.map((d) => d.data())),
+    (error) => { console.error("Erro ao ouvir members:", error); if (onError) onError(error); callback([]); }
   );
 }
 
-export function listenAuth(callback) {
-  return onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      await ensureUserDoc(user);
-    }
+export function subscribeInvites(callback, onError) {
+  return onSnapshot(
+    collection(db, "invites"),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (error) => { console.error("Erro ao ouvir invites:", error); if (onError) onError(error); callback([]); }
+  );
+}
 
+export function updateMemberRole(uid, role) {
+  return updateDoc(doc(db, "members", uid), { role, updatedAt: serverTimestamp() });
+}
+
+export function updateMemberStatus(uid, status) {
+  return updateDoc(doc(db, "members", uid), { status, updatedAt: serverTimestamp() });
+}
+
+export function removeMember(uid) {
+  return deleteDoc(doc(db, "members", uid));
+}
+
+export function createInvite(email, role, createdByUid) {
+  const key = emailKey(email);
+  if (!key) throw new Error("E-mail inválido.");
+  return setDoc(doc(db, "invites", key), {
+    email: key,
+    role: role || "colaborador",
+    status: "pending",
+    createdBy: createdByUid || null,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export function deleteInvite(email) {
+  return deleteDoc(doc(db, "invites", emailKey(email)));
+}
+
+// Migração one-time: copia os dados em nuvem do usuário (users/{uid}/...) para as
+// coleções compartilhadas do workspace. Não sobrescreve se a coleção compartilhada
+// já tiver dados (evita duplicar). Retorna o total copiado.
+export async function migrateUserDataToWorkspace(uid) {
+  if (!uid) return 0;
+  let copied = 0;
+  for (const name of SHARED) {
+    const sharedSnap = await getDocs(collection(db, name));
+    if (!sharedSnap.empty) continue;
+    const srcSnap = await getDocs(collection(db, "users", uid, name));
+    for (const d of srcSnap.docs) {
+      await setDoc(doc(db, name, d.id), d.data(), { merge: true });
+      copied++;
+    }
+  }
+  return copied;
+}
+
+export function listenAuth(callback) {
+  return onAuthStateChanged(auth, (user) => {
     callback(user);
   });
 }
 
 export async function registerWithEmail(email, password) {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await ensureUserDoc(credential.user);
+  await ensureMembership(credential.user);
   return credential;
 }
 
 export async function loginWithEmail(email, password) {
   const credential = await signInWithEmailAndPassword(auth, email, password);
-  await ensureUserDoc(credential.user);
   return credential;
 }
 
@@ -100,7 +223,7 @@ export function logoutUser() {
 
 function subscribeCollection(userId, collectionName, callback, onError) {
   return onSnapshot(
-    collection(db, "users", userId, collectionName),
+    colRef(userId, collectionName),
     (snapshot) => {
       callback(snapshot.docs.map((item) => item.data()));
     },
@@ -117,7 +240,7 @@ function saveCloud(userId, collectionName, item) {
   if (!item?.id) throw new Error("Item sem ID.");
 
   return setDoc(
-    doc(db, "users", userId, collectionName, String(item.id)),
+    docRef(userId, collectionName, item.id),
     {
       ...cleanData(item),
       updatedAt: new Date().toISOString(),
@@ -129,7 +252,7 @@ function saveCloud(userId, collectionName, item) {
 function deleteCloud(userId, collectionName, itemId) {
   if (!userId) throw new Error("Usuário não autenticado.");
 
-  return deleteDoc(doc(db, "users", userId, collectionName, String(itemId)));
+  return deleteDoc(docRef(userId, collectionName, itemId));
 }
 
 export const subscribeTasks = (userId, callback) =>
@@ -139,7 +262,7 @@ const PAGE_SIZE = 50;
 
 export function subscribeTasksPaged(userId, callback, onError, pageSize = PAGE_SIZE) {
   const q = query(
-    collection(db, "users", userId, "tasks"),
+    colRef(userId, "tasks"),
     orderBy("updatedAt", "desc"),
     limit(pageSize)
   );
@@ -160,7 +283,7 @@ export function subscribeTasksPaged(userId, callback, onError, pageSize = PAGE_S
 
 export async function fetchTasksPage(userId, afterDoc, pageSize = PAGE_SIZE) {
   const q = query(
-    collection(db, "users", userId, "tasks"),
+    colRef(userId, "tasks"),
     orderBy("updatedAt", "desc"),
     startAfter(afterDoc),
     limit(pageSize)

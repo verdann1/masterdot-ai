@@ -14,6 +14,7 @@ const titles = {
   focus:        "Modo Foco",
   responsible:  "Por Responsável",
   kpi:          "KPIs & Analytics",
+  team:         "Equipe",
 };
 
 export default function AppHeader({ activeTab, setActiveTab, isOnline, onSearchOpen }) {

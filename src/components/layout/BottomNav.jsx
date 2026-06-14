@@ -10,6 +10,7 @@ import {
   Columns3,
   Clock,
   Zap,
+  Users,
   X,
 } from "lucide-react";
 
@@ -29,12 +30,14 @@ const MORE_ITEMS = [
   { id: "focus",        label: "Modo Foco",     icon: Zap,          color: "text-blue-300",    bg: "bg-blue-500/12"   },
 ];
 
-const MORE_IDS = new Set(MORE_ITEMS.map((i) => i.id));
+const TEAM_ITEM = { id: "team", label: "Equipe", icon: Users, color: "text-sky-300", bg: "bg-sky-500/12" };
 
 // ── Component ─────────────────────────────────────────────────────────────
-export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
+export default function BottomNav({ activeTab, setActiveTab, onAddClick, isManager }) {
   const [showMore, setShowMore] = useState(false);
-  const isMoreActive = MORE_IDS.has(activeTab);
+  const moreItems = isManager ? [...MORE_ITEMS, TEAM_ITEM] : MORE_ITEMS;
+  const moreIds = new Set(moreItems.map((i) => i.id));
+  const isMoreActive = moreIds.has(activeTab);
 
   function navigate(id) {
     setShowMore(false);
@@ -86,7 +89,7 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
 
                 {/* 3×2 grid */}
                 <div className="grid grid-cols-3 gap-3">
-                  {MORE_ITEMS.map(({ id, label, icon: Icon, color, bg }) => {
+                  {moreItems.map(({ id, label, icon: Icon, color, bg }) => {
                     const active = activeTab === id;
                     return (
                       <button

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import InfoBox from "../common/infoBox";
+import Avatar from "../common/Avatar";
 import CommentBlock from "./CommentBlock";
 import ChecklistBlock from "./ChecklistBlock";
 import EvidenceBlock from "./EvidenceBlock";
@@ -107,7 +108,8 @@ export default function TaskDetailSheet({ app }) {
               return list.length ? (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {list.map((r) => (
-                    <span key={r} className="rounded-full bg-blue-500/15 px-2 py-0.5 text-xs text-blue-300">
+                    <span key={r} className="flex items-center gap-1.5 rounded-full bg-blue-500/15 py-0.5 pl-0.5 pr-2 text-xs text-blue-300">
+                      <Avatar name={r} size={18} />
                       {r}
                     </span>
                   ))}
@@ -265,6 +267,30 @@ export default function TaskDetailSheet({ app }) {
           </div>
         )}
 
+        {/* Authorship */}
+        {(() => {
+          const creator =
+            task.createdByEmail ||
+            app.members?.find((m) => m.uid === task.createdBy)?.email ||
+            null;
+          const lastChange = task.history?.length
+            ? task.history[task.history.length - 1]
+            : null;
+          if (!creator && !lastChange?.by) return null;
+          return (
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-[11px] text-slate-500">
+              {creator && (
+                <span className="flex items-center gap-1.5">
+                  <Avatar name={creator} size={16} /> Criado por <span className="text-slate-300">{creator}</span>
+                </span>
+              )}
+              {lastChange?.by && (
+                <span>Última alteração por <span className="text-slate-300">{lastChange.by}</span></span>
+              )}
+            </div>
+          );
+        })()}
+
         {/* History */}
         {(task.history?.length > 0) && (
           <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-3">
@@ -290,7 +316,9 @@ export default function TaskDetailSheet({ app }) {
                     <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${ACTION_COLOR[h.action] || "bg-slate-500"}`} />
                     <div className="min-w-0 flex-1">
                       <p className="text-[12px] text-slate-300 break-words">{h.detail}</p>
-                      <p className="mt-0.5 text-[10px] text-slate-600">{h.at}</p>
+                      <p className="mt-0.5 text-[10px] text-slate-600">
+                        {h.at}{h.by ? ` · ${h.by}` : ""}
+                      </p>
                     </div>
                   </div>
                 ))}
