@@ -25,9 +25,9 @@ function StepDots({ current, total }) {
           key={i}
           className={`h-1.5 rounded-full transition-all ${
             i === current
-              ? "w-5 bg-cyan-400"
+              ? "w-5 bg-blue-400"
               : i < current
-              ? "w-1.5 bg-cyan-600"
+              ? "w-1.5 bg-blue-600"
               : "w-1.5 bg-slate-700"
           }`}
         />
@@ -38,7 +38,7 @@ function StepDots({ current, total }) {
 
 // ─── task form in 2 steps ─────────────────────────────────────────────────────
 
-function TaskForm({ app, onClose }) {
+function TaskForm({ app }) {
   const [step, setStep] = useState(0);
 
   const form = app.taskForm;
@@ -105,7 +105,7 @@ function TaskForm({ app, onClose }) {
           <button
             disabled={!step1Valid}
             onClick={() => setStep(1)}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-cyan-500 text-sm font-bold text-white disabled:opacity-30"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 text-sm font-bold text-white disabled:opacity-30"
           >
             Próximo
             <ChevronRight className="h-4 w-4" />
@@ -173,15 +173,15 @@ function TaskForm({ app, onClose }) {
                 step="5"
                 value={form.progress ?? 0}
                 onChange={(e) => set("progress", Number(e.target.value))}
-                className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-slate-800 accent-cyan-400"
+                className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-slate-800 accent-blue-400"
               />
-              <span className="min-w-[36px] text-right text-sm font-bold text-cyan-300">
+              <span className="min-w-[36px] text-right text-sm font-bold text-blue-300">
                 {form.progress ?? 0}%
               </span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800">
               <div
-                className="h-full rounded-full bg-cyan-400 transition-all"
+                className="h-full rounded-full bg-blue-400 transition-all"
                 style={{ width: `${form.progress ?? 0}%` }}
               />
             </div>
@@ -245,7 +245,7 @@ export default function QuickAddSheet({ app }) {
   );
 
   const modeConfig = {
-    task:      { icon: <ClipboardList className="text-cyan-400" />,    title: "Nova atividade"  },
+    task:      { icon: <ClipboardList className="text-blue-400" />,    title: "Nova atividade"  },
     project:   { icon: <FolderKanban className="text-orange-400" />,   title: "Novo projeto"    },
     problem:   { icon: <AlertTriangle className="text-red-400" />,     title: "Novo problema"   },
     knowledge: { icon: <Database className="text-emerald-400" />,      title: "Nova base"       },
@@ -319,8 +319,8 @@ export default function QuickAddSheet({ app }) {
               }}
             />
             {selectedProblemTask && (
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-3">
-                <p className="text-xs font-semibold text-cyan-300">Atividade selecionada</p>
+              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-3">
+                <p className="text-xs font-semibold text-blue-300">Atividade selecionada</p>
                 <p className="mt-1 text-sm font-bold text-white">{selectedProblemTask.title}</p>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-300">
                   <p><span className="text-slate-500">Projeto:</span> {selectedProblemTask.project || "-"}</p>

@@ -8,7 +8,7 @@ export default function Metric({ icon, title, value }) {
       className="master-card rounded-[28px] p-4 shadow-xl shadow-black/20"
     >
       <div className="flex items-center justify-between">
-        <div className="rounded-2xl bg-cyan-500/10 p-3 text-cyan-300">
+        <div className="rounded-2xl bg-blue-500/10 p-3 text-blue-300">
           {icon}
         </div>
 

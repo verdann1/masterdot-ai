@@ -46,7 +46,7 @@ export default function ImportPreviewSheet({ app }) {
 
           <div className="rounded-2xl bg-slate-900 p-3 text-center">
             <p className="text-xs text-slate-500">Atualizadas</p>
-            <p className="text-xl font-bold text-cyan-300">
+            <p className="text-xl font-bold text-blue-300">
               {preview.updatedTasks}
             </p>
           </div>

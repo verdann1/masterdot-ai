@@ -33,13 +33,13 @@ import {
 } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBe9nydVK38hkkToKW3cekQElAARUyy6Ds",
-  authDomain: "masterdot-2a46f.firebaseapp.com",
-  projectId: "masterdot-2a46f",
-  storageBucket: "masterdot-2a46f.firebasestorage.app",
-  messagingSenderId: "771658123836",
-  appId: "1:771658123836:web:154968be1c78a1ae671139",
-  measurementId: "G-EH3THN4PQ0",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -98,7 +98,7 @@ export function logoutUser() {
   return signOut(auth);
 }
 
-function subscribeCollection(userId, collectionName, callback) {
+function subscribeCollection(userId, collectionName, callback, onError) {
   return onSnapshot(
     collection(db, "users", userId, collectionName),
     (snapshot) => {
@@ -106,6 +106,7 @@ function subscribeCollection(userId, collectionName, callback) {
     },
     (error) => {
       console.error(`Erro ao ouvir ${collectionName}:`, error);
+      if (onError) onError(error);
       callback([]);
     }
   );
@@ -136,7 +137,7 @@ export const subscribeTasks = (userId, callback) =>
 
 const PAGE_SIZE = 50;
 
-export function subscribeTasksPaged(userId, callback, pageSize = PAGE_SIZE) {
+export function subscribeTasksPaged(userId, callback, onError, pageSize = PAGE_SIZE) {
   const q = query(
     collection(db, "users", userId, "tasks"),
     orderBy("updatedAt", "desc"),
@@ -151,6 +152,7 @@ export function subscribeTasksPaged(userId, callback, pageSize = PAGE_SIZE) {
     },
     (error) => {
       console.error("Erro ao ouvir tasks paginadas:", error);
+      if (onError) onError(error);
       callback([], null, false);
     }
   );
@@ -169,17 +171,14 @@ export async function fetchTasksPage(userId, afterDoc, pageSize = PAGE_SIZE) {
   return { tasks, lastDoc, hasMore: snapshot.docs.length >= pageSize };
 }
 
-export const subscribeProjects = (userId, callback) =>
-  subscribeCollection(userId, "projects", callback);
+export const subscribeProjects = (userId, callback, onError) =>
+  subscribeCollection(userId, "projects", callback, onError);
 
-export const subscribeProblems = (userId, callback) =>
-  subscribeCollection(userId, "problems", callback);
+export const subscribeProblems = (userId, callback, onError) =>
+  subscribeCollection(userId, "problems", callback, onError);
 
-export const subscribeKnowledge = (userId, callback) =>
-  subscribeCollection(userId, "knowledge", callback);
-
-export const subscribeProductionRecords = (userId, callback) =>
-  subscribeCollection(userId, "productionRecords", callback);
+export const subscribeKnowledge = (userId, callback, onError) =>
+  subscribeCollection(userId, "knowledge", callback, onError);
 
 export const saveTaskCloud = (userId, task) =>
   saveCloud(userId, "tasks", task);
@@ -205,12 +204,6 @@ export const saveKnowledgeCloud = (userId, item) =>
 export const deleteKnowledgeCloud = (userId, itemId) =>
   deleteCloud(userId, "knowledge", itemId);
 
-export const saveProductionRecordCloud = (userId, record) =>
-  saveCloud(userId, "productionRecords", record);
-
-export const deleteProductionRecordCloud = (userId, recordId) =>
-  deleteCloud(userId, "productionRecords", recordId);
-
 export async function uploadEvidenceCloud(userId, taskId, evidence) {
   const path = `users/${userId}/evidences/${taskId}/${evidence.id}.jpg`;
   const imageRef = ref(storage, path);
@@ -232,3 +225,22 @@ export async function deleteEvidenceCloud(path) {
   if (!path) return;
   await deleteObject(ref(storage, path));
 }
+
+// ── Time Tracking ─────────────────────────────────────────────────────────────
+export const subscribeEmployees = (userId, callback, onError) =>
+  subscribeCollection(userId, "tt_employees", callback, onError);
+
+export const subscribeTimeRecords = (userId, callback, onError) =>
+  subscribeCollection(userId, "tt_records", callback, onError);
+
+export const saveEmployeeCloud = (userId, employee) =>
+  saveCloud(userId, "tt_employees", employee);
+
+export const deleteEmployeeCloud = (userId, employeeId) =>
+  deleteCloud(userId, "tt_employees", employeeId);
+
+export const saveTimeRecordCloud = (userId, record) =>
+  saveCloud(userId, "tt_records", record);
+
+export const deleteTimeRecordCloud = (userId, recordId) =>
+  deleteCloud(userId, "tt_records", recordId);

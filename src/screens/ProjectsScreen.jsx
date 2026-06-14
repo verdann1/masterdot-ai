@@ -136,7 +136,7 @@ export default function ProjectsScreen({ app }) {
 
               <div className="h-3 overflow-hidden rounded-full bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-cyan-400"
+                  className="h-full rounded-full bg-blue-400"
                   style={{ width: `${percent}%` }}
                 />
               </div>
@@ -154,7 +154,7 @@ export default function ProjectsScreen({ app }) {
 
                 <div className="rounded-2xl bg-slate-950 p-2">
                   <p className="text-xs text-slate-500">Progresso</p>
-                  <p className="font-bold text-cyan-400">{percent}%</p>
+                  <p className="font-bold text-blue-400">{percent}%</p>
                 </div>
               </div>
 
@@ -162,7 +162,7 @@ export default function ProjectsScreen({ app }) {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setSelectedProject(project)}
-                    className="flex h-10 items-center justify-center gap-2 rounded-2xl bg-cyan-500/15 text-sm font-medium text-cyan-300"
+                    className="flex h-10 items-center justify-center gap-2 rounded-2xl bg-blue-500/15 text-sm font-medium text-blue-300"
                   >
                     <BarChart3 className="h-4 w-4" />
                     Dashboard

@@ -66,7 +66,7 @@ export default function ProjectDashboardSheet({ app, project, onClose }) {
       <div className="max-h-[94vh] w-full overflow-y-auto rounded-t-[36px] border-t border-slate-800 bg-slate-950 p-4 shadow-2xl">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-cyan-300">
+            <p className="text-xs font-medium uppercase tracking-wide text-blue-300">
               Dashboard do projeto
             </p>
 
@@ -95,7 +95,7 @@ export default function ProjectDashboardSheet({ app, project, onClose }) {
 
           <div className="h-4 overflow-hidden rounded-full bg-slate-800">
             <div
-              className="h-full rounded-full bg-cyan-400"
+              className="h-full rounded-full bg-blue-400"
               style={{ width: `${percent}%` }}
             />
           </div>

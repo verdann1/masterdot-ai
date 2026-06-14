@@ -27,7 +27,7 @@ export default function ResponsiblesInput({ value = [], onChange, placeholder })
           {value.map((name) => (
             <span
               key={name}
-              className="flex items-center gap-1 rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs text-cyan-300"
+              className="flex items-center gap-1 rounded-full bg-blue-500/20 px-2 py-0.5 text-xs text-blue-300"
             >
               {name}
               <button

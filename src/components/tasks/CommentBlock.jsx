@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TextareaDark from "../common/TextareaDark";
+import VoiceMicButton from "../common/VoiceMicButton";
 
 export default function CommentBlock({ app, task, compact = false }) {
   const comments = task.comments || [];
@@ -135,16 +136,28 @@ export default function CommentBlock({ app, task, compact = false }) {
 
       {isEditing && (
         <div className="mt-3 space-y-2">
-          <TextareaDark
-            placeholder="Digite o andamento..."
-            value={app.commentForm.text}
-            onChange={(e) =>
-              app.setCommentForm({
-                ...app.commentForm,
-                text: e.target.value,
-              })
-            }
-          />
+          <div className="relative">
+            <TextareaDark
+              placeholder="Digite o andamento..."
+              value={app.commentForm.text}
+              onChange={(e) =>
+                app.setCommentForm({
+                  ...app.commentForm,
+                  text: e.target.value,
+                })
+              }
+            />
+            <div className="absolute bottom-2 right-2">
+              <VoiceMicButton
+                onResult={(t) =>
+                  app.setCommentForm((prev) => ({
+                    ...prev,
+                    text: prev.text ? prev.text + " " + t : t,
+                  }))
+                }
+              />
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <Button

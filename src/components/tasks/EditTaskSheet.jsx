@@ -97,7 +97,7 @@ export default function EditTaskSheet({ app }) {
           <div>
             <div className="mb-1 flex items-center justify-between">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">% Progresso</p>
-              <span className="text-sm font-bold text-cyan-300">{progress}%</span>
+              <span className="text-sm font-bold text-blue-300">{progress}%</span>
             </div>
             <input
               type="range"
@@ -106,7 +106,7 @@ export default function EditTaskSheet({ app }) {
               step="5"
               value={progress}
               onChange={(e) => set("progress", Number(e.target.value))}
-              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-cyan-400"
+              className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-800 accent-blue-400"
             />
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-800">
               <div

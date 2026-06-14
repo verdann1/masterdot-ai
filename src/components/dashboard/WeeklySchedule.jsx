@@ -26,7 +26,7 @@ function statusColor(task) {
 
   if (task.status === "Concluído") return "border-emerald-500/30 bg-emerald-500/10";
   if (task.endDate < today) return "border-red-500/30 bg-red-500/10";
-  if (task.endDate === today) return "border-cyan-500/30 bg-cyan-500/10";
+  if (task.endDate === today) return "border-sky-500/30 bg-sky-500/10";
 
   return "border-yellow-500/30 bg-yellow-500/10";
 }

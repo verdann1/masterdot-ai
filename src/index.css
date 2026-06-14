@@ -6,35 +6,128 @@
 /* stylelint-disable-next-line */
 @tailwind utilities;
 
+/* ── Brand variables ─────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --mp-cyan:       #2563eb;
+    --mp-cyan-dim:   rgba(37, 99, 235, 0.14);
+    --mp-navy:       #0d1f3c;
+    --mp-bg:         #020617;
+  }
+}
+
+/* ── Animations ──────────────────────────────────────────────────── */
 @keyframes softGlow {
-  0%, 100% {
-    box-shadow: 0 0 0 rgba(14, 165, 233, 0);
-  }
-  50% {
-    box-shadow: 0 0 24px rgba(14, 165, 233, 0.18);
-  }
+  0%, 100% { box-shadow: 0 0 0 rgba(14, 165, 233, 0); }
+  50%       { box-shadow: 0 0 24px rgba(14, 165, 233, 0.18); }
 }
 
 @keyframes redPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 rgba(239, 68, 68, 0.1);
-  }
-  50% {
-    box-shadow: 0 0 22px rgba(239, 68, 68, 0.35);
-  }
+  0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0.1); }
+  50%       { box-shadow: 0 0 22px rgba(239, 68, 68, 0.35); }
 }
 
+@keyframes mpPulseRing {
+  0%   { box-shadow: 0 0 0 0   rgba(6, 182, 212, 0.45); }
+  70%  { box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(6, 182, 212, 0); }
+}
+
+@keyframes mpShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes mpFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mpScanLine {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+@keyframes mpGlowPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
+}
+
+/* ── Glass nav ───────────────────────────────────────────────────── */
 .master-glass {
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: rgba(8, 14, 28, 0.85);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
 }
 
+/* ── Cards ───────────────────────────────────────────────────────── */
+
+/* Classic dark card */
 .master-card {
-  background: linear-gradient(145deg, rgba(15,23,42,0.92), rgba(2,6,23,0.95));
-  border: 1px solid rgba(51,65,85,0.85);
+  background: linear-gradient(145deg, rgba(13,21,38,0.95), rgba(4,8,20,0.98));
+  border: 1px solid rgba(51, 65, 85, 0.7);
 }
 
+/* Premium card — subtle slate border, no neon */
+.mp-card {
+  background: linear-gradient(145deg, rgba(15,23,42,0.96), rgba(4,8,20,0.99));
+  border: 1px solid rgba(51, 65, 85, 0.55);
+  box-shadow:
+    0 2px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(148, 163, 184, 0.05);
+}
+
+/* Highlighted card — flat corporate look, static accent border, no shimmer */
+.mp-card-highlight {
+  background: linear-gradient(145deg, rgba(15,23,42,0.97), rgba(4,8,20,0.99));
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  box-shadow:
+    0 4px 22px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(148, 163, 184, 0.06);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Effects ─────────────────────────────────────────────────────── */
+
+.mp-glow {
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+
+.mp-glow-sm {
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mp-pulse-ring {
+  animation: mpPulseRing 2.2s ease-out infinite;
+}
+
+.mp-fade-up {
+  animation: mpFadeUp 0.3s ease-out forwards;
+}
+
+/* ── Status / critical ───────────────────────────────────────────── */
 .master-critical {
   animation: redPulse 1.8s infinite;
+}
+
+/* ── Accent top border (gradient) ────────────────────────────────── */
+.mp-accent-top::before {
+  content: "";
+  display: block;
+  height: 2px;
+  margin: -1px -1px 12px -1px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, #1d4ed8, #2563eb, #3b82f6, #2563eb, #1d4ed8);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 3px; height: 3px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
 }
