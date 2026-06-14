@@ -99,6 +99,13 @@ export default function TasksScreen({ app }) {
             />
           </div>
 
+          {/* Project filter */}
+          <SelectField
+            value={app.projectFilter}
+            onChange={app.setProjectFilter}
+            options={["Todos", ...app.projects.map((p) => p.name)]}
+          />
+
           {/* Summary */}
           <StatusSummary tasks={app.filteredMainTasks} />
 

@@ -1,0 +1,65 @@
+/**
+ * Gera resources/icon.png (1024×1024) a partir do SVG inline do MetaPulse.
+ * Executa com: node scripts/gen-icon.mjs
+ */
+import sharp from "sharp";
+import { writeFileSync } from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUT = path.join(__dirname, "..", "resources", "icon.png");
+
+// SVG renderizado em 1024×1024 (viewBox 0 0 100 100 → scale 10.24)
+// Marca de gestão: barras de progresso ascendentes + check (sem ECG/pulse)
+const svg = `<svg width="1024" height="1024" viewBox="0 0 100 100" fill="none"
+  xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d1f3c"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="100" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%"   stop-color="#0891b2"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="clip">
+      <rect width="100" height="100" rx="22"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+
+  <!-- Border -->
+  <rect x="1" y="1" width="98" height="98" rx="21"
+    fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-opacity="0.2"/>
+
+  <!-- Clipped content -->
+  <g clip-path="url(#clip)">
+    <!-- Baseline -->
+    <rect x="20" y="74" width="60" height="3" rx="1.5" fill="#1e3a5f"/>
+
+    <!-- Ascending progress bars -->
+    <g filter="url(#glow)">
+      <rect x="24" y="56" width="13" height="18" rx="3.5" fill="url(#bar)" fill-opacity="0.55"/>
+      <rect x="43" y="44" width="13" height="30" rx="3.5" fill="url(#bar)" fill-opacity="0.8"/>
+      <rect x="62" y="30" width="13" height="44" rx="3.5" fill="url(#bar)"/>
+    </g>
+
+    <!-- Check mark -->
+    <polyline points="30,34 44,48 72,18" fill="none" stroke="#e0f9ff"
+      stroke-width="6" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  </g>
+</svg>`;
+
+await sharp(Buffer.from(svg))
+  .resize(1024, 1024)
+  .png({ compressionLevel: 9 })
+  .toFile(OUT);
+
+console.log("✓ resources/icon.png gerado (1024×1024)");

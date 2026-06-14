@@ -73,12 +73,17 @@ async function saveAndShareWorkbook(workbook, fileName, title) {
     directory: Directory.Cache,
   });
 
-  await Share.share({
-    title,
-    text: "Arquivo Excel exportado pelo MasterDot.",
-    url: savedFile.uri,
-    dialogTitle: "Salvar ou compartilhar Excel",
-  });
+  try {
+    await Share.share({
+      title,
+      text: "Arquivo Excel exportado pelo MetaPulse.",
+      url: savedFile.uri,
+      dialogTitle: "Salvar ou compartilhar Excel",
+    });
+  } catch (err) {
+    const msg = (err?.message || "").toLowerCase();
+    if (!msg.includes("cancel") && !msg.includes("dismiss") && !msg.includes("abort")) throw err;
+  }
 
   return savedFile.uri;
 }
@@ -140,7 +145,7 @@ export async function exportTasksToExcel(
   return saveAndShareWorkbook(
     workbook,
     fileName,
-    "Exportação de Atividades MasterDot"
+    "Exportação de Atividades MetaPulse"
   );
 }
 
@@ -264,6 +269,6 @@ export async function exportExecutiveReport(tasks, projects = []) {
   return saveAndShareWorkbook(
     workbook,
     "masterdot-relatorio-executivo",
-    "Relatório Executivo MasterDot"
+    "Relatório Executivo MetaPulse"
   );
 }

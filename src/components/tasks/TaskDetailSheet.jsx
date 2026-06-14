@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   X,
   Pencil,
@@ -9,6 +10,8 @@ import {
   MessageCircle,
   FileText,
   FileSpreadsheet,
+  ChevronDown,
+  History,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,7 +35,14 @@ function Field({ label, value }) {
   );
 }
 
+const ACTION_COLOR = {
+  status:  "bg-blue-400",
+  comment: "bg-cyan-400",
+  edit:    "bg-amber-400",
+};
+
 export default function TaskDetailSheet({ app }) {
+  const [showHistory, setShowHistory] = useState(false);
   const task = app.tasks.find((item) => String(item.id) === String(app.selectedTaskId));
   if (!task) return null;
 
@@ -226,12 +236,6 @@ export default function TaskDetailSheet({ app }) {
           </div>
         )}
 
-        {task.aiReason && (
-          <div className="mt-3">
-            <InfoBox title="IA local" text={task.aiReason} small />
-          </div>
-        )}
-
         {/* Blocks */}
         <div className="mt-4 space-y-3">
           <CommentBlock app={app} task={task} />
@@ -258,6 +262,40 @@ export default function TaskDetailSheet({ app }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* History */}
+        {(task.history?.length > 0) && (
+          <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950 p-3">
+            <button
+              onClick={() => setShowHistory((v) => !v)}
+              className="flex w-full items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <History className="h-3.5 w-3.5 text-slate-500" />
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  Histórico de alterações ({task.history.length})
+                </p>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-slate-600 transition-transform duration-200 ${showHistory ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {showHistory && (
+              <div className="mt-3 space-y-1.5">
+                {[...task.history].reverse().map((h) => (
+                  <div key={h.id} className="flex items-start gap-2.5 rounded-xl bg-slate-900 px-3 py-2">
+                    <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${ACTION_COLOR[h.action] || "bg-slate-500"}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] text-slate-300 break-words">{h.detail}</p>
+                      <p className="mt-0.5 text-[10px] text-slate-600">{h.at}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

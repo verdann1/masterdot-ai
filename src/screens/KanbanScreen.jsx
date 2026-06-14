@@ -1,18 +1,30 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarDays, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateBR } from "../utils/dateUtils";
 import { getDueState, priorityColor } from "../components/tasks/taskStyles";
 
 const columns = [
-  { id: "Aberto", title: "Aberto" },
-  { id: "Em andamento", title: "Em andamento" },
-  { id: "Aguardando", title: "Aguardando" },
-  { id: "Concluído", title: "Concluído" },
+  { id: "Aberto",       title: "Aberto",       dot: "bg-amber-400",   border: "border-amber-500/25",   bg: "bg-amber-500/5"   },
+  { id: "Em andamento", title: "Em andamento", dot: "bg-blue-400",    border: "border-blue-500/25",    bg: "bg-blue-500/5"    },
+  { id: "Aguardando",   title: "Aguardando",   dot: "bg-purple-400",  border: "border-purple-500/25",  bg: "bg-purple-500/5"  },
+  { id: "Concluído",    title: "Concluído",    dot: "bg-emerald-400", border: "border-emerald-500/25", bg: "bg-emerald-500/5" },
 ];
 
 export default function KanbanScreen({ app }) {
   const [expandedColumns, setExpandedColumns] = useState(["Aberto"]);
+
+  const columnItems = useMemo(() => {
+    const mainTasks = app.tasks.filter((t) => t.parentId === null);
+    return Object.fromEntries(
+      columns.map((col) => [
+        col.id,
+        mainTasks
+          .filter((t) => t.status === col.id)
+          .sort((a, b) => String(a.endDate || "").localeCompare(String(b.endDate || ""))),
+      ])
+    );
+  }, [app.tasks]);
 
   function toggleColumn(columnId) {
     setExpandedColumns((prev) =>
@@ -25,36 +37,32 @@ export default function KanbanScreen({ app }) {
   return (
     <div className="space-y-4">
       {columns.map((column) => {
-        const items = app.tasks
-          .filter((task) => task.parentId === null && task.status === column.id)
-          .sort((a, b) =>
-            String(a.endDate || "").localeCompare(String(b.endDate || ""))
-          );
+        const items = columnItems[column.id];
 
         const expanded = expandedColumns.includes(column.id);
 
         return (
           <div
             key={column.id}
-            className="rounded-[30px] border border-slate-800 bg-slate-900/80 p-4 shadow-xl shadow-black/20 backdrop-blur"
+            className={`rounded-[30px] border ${column.border} bg-slate-900/70 p-4 shadow-xl shadow-black/20 backdrop-blur`}
           >
             <button
               onClick={() => toggleColumn(column.id)}
               className="mb-3 flex w-full items-center justify-between"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {expanded ? (
-                  <ChevronDown className="h-5 w-5 text-slate-400" />
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
                 ) : (
-                  <ChevronRight className="h-5 w-5 text-slate-400" />
+                  <ChevronRight className="h-4 w-4 text-slate-500" />
                 )}
-
+                <span className={`h-2 w-2 rounded-full ${column.dot}`} />
                 <h3 className="font-bold text-white">{column.title}</h3>
               </div>
 
-              <Badge className="rounded-full border border-slate-700 bg-slate-950 text-slate-300">
+              <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${column.bg} ${column.dot.replace("bg-", "text-")}`}>
                 {items.length}
-              </Badge>
+              </span>
             </button>
 
             {!expanded && items.length > 0 && (

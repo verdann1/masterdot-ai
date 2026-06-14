@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import InputDark from "../components/common/InputDark";
 import DarkCard from "../components/common/DarkCard";
+import MetaPulseLogo from "../components/common/MetaPulseLogo";
 
 export default function LoginScreen({ app }) {
   const [mode, setMode] = useState("login");
@@ -9,9 +10,14 @@ export default function LoginScreen({ app }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4 text-slate-100">
       <div className="w-full max-w-md space-y-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white">Master DOT</h1>
-          <p className="text-sm text-slate-400">Gestão inteligente de atividades</p>
+        <div className="flex flex-col items-center gap-3">
+          <MetaPulseLogo iconSize={80} layout="icon" />
+          <div className="text-center">
+            <h1 className="text-2xl font-bold tracking-tight">
+              <span className="text-white">Meta</span><span className="text-cyan-400">Pulse</span>
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">Gestão inteligente de atividades</p>
+          </div>
         </div>
 
         <DarkCard>

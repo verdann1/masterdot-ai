@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   defaultProjects,
@@ -8,17 +8,24 @@ import {
 } from "../data/initialData";
 
 import { todayISO } from "../utils/dateUtils";
-import { loadAppData, saveAppData, loadProductionData, saveProductionData } from "../services/storageService";
+import { loadAppData, saveAppData } from "../services/storageService";
 import { captureEvidence } from "../services/evidenceService";
-import { getAiPriority } from "../services/aiPriorityService";
 import {
   scheduleTaskNotifications,
+  autoScheduleIfEnabled,
+  isNotificationsEnabled,
   getTaskAlerts,
+  getNotifDaysBefore,
+  setNotifDaysBefore,
+  isDailyBriefingEnabled,
+  scheduleDailyBriefing,
+  cancelDailyBriefing,
 } from "../services/notificationService";
 import { importTasksFromExcelFile } from "../services/excelService";
 import { exportExecutivePdfReport, shareTaskAsPdf } from "../services/pdfReportService";
-import { importProductionFromExcel } from "../services/productionImportService";
 import { Share } from "@capacitor/share";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Preferences } from "@capacitor/preferences";
 import { toast } from "sonner";
 
 import {
@@ -48,9 +55,28 @@ import {
   shareTaskAsExcel,
 } from "../services/exportService";
 
-export function useMasterDot() {
+import { useTaskFilters } from "./useTaskFilters";
+
+function isShareCancel(err) {
+  const msg = (err?.message || err?.toString() || "").toLowerCase();
+  return msg.includes("cancel") || msg.includes("dismiss") || msg.includes("abort");
+}
+
+function makeHistoryEntry(action, detail) {
+  return {
+    id: Date.now() + Math.random(),
+    at: new Date().toLocaleString("pt-BR"),
+    action,
+    detail,
+  };
+}
+
+export function useMasterDot({ confirm } = {}) {
+  const confirmFn = confirm || ((msg) => Promise.resolve(window.confirm(msg)));
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [dailyBriefingEnabled, setDailyBriefingEnabledState] = useState(() => isDailyBriefingEnabled());
+  const [notifDaysBefore, setNotifDaysBeforeState] = useState(() => getNotifDaysBefore());
 
   const [activeTab, setActiveTab] = useState("home");
 
@@ -58,11 +84,6 @@ export function useMasterDot() {
   const [problems, setProblems] = useState(initialProblems);
   const [knowledge, setKnowledge] = useState(initialKnowledge);
   const [projects, setProjects] = useState(defaultProjects);
-
-  const [productionRecords, setProductionRecords] = useState([]);
-  const [productionTarget, setProductionTarget] = useState(
-    Number(localStorage.getItem("productionTarget") || 5000)
-  );
 
   const [showAddOptions, setShowAddOptions] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -75,6 +96,7 @@ export function useMasterDot() {
 
   const [saving, setSaving] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [cloudError, setCloudError] = useState(null);
   const [lastTaskDoc, setLastTaskDoc] = useState(null);
   const [hasMoreTasks, setHasMoreTasks] = useState(false);
   const [loadingMoreTasks, setLoadingMoreTasks] = useState(false);
@@ -83,11 +105,6 @@ export function useMasterDot() {
 
   const [commentForm, setCommentForm] = useState({ taskId: null, text: "" });
   const [checklistForm, setChecklistForm] = useState({ taskId: null, text: "" });
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Todos");
-  const [priorityFilter, setPriorityFilter] = useState("Todas");
-  const [quickFilter, setQuickFilter] = useState("Todas");
 
   const [importPreview, setImportPreview] = useState(null);
   const [importingExcel, setImportingExcel] = useState(false);
@@ -134,8 +151,16 @@ export function useMasterDot() {
     content: "",
   });
 
+  // Auto-reschedule notifications once after tasks load (if previously enabled)
+  const hasAutoScheduled = useRef(false);
   useEffect(() => {
-    const up = () => setIsOnline(true);
+    if (!loaded || hasAutoScheduled.current || tasks.length === 0) return;
+    hasAutoScheduled.current = true;
+    autoScheduleIfEnabled(tasks);
+  }, [loaded, tasks]);
+
+  useEffect(() => {
+    const up = () => { setIsOnline(true); setCloudError(null); };
     const down = () => setIsOnline(false);
     window.addEventListener("online", up);
     window.addEventListener("offline", down);
@@ -151,6 +176,10 @@ export function useMasterDot() {
     let unsubscribeProblems = null;
     let unsubscribeKnowledge = null;
 
+    const handleCloudError = () => {
+      setCloudError("Falha ao sincronizar com a nuvem. Verifique sua conexão.");
+    };
+
     async function init() {
       const saved = await loadAppData();
 
@@ -160,9 +189,6 @@ export function useMasterDot() {
         setKnowledge(saved.knowledge || []);
         setProjects(saved.projects || defaultProjects);
       }
-
-      const savedProduction = await loadProductionData();
-      if (savedProduction.length > 0) setProductionRecords(savedProduction);
 
       const unsubscribeAuth = listenAuth((user) => {
         if (unsubscribeTasks) unsubscribeTasks();
@@ -213,27 +239,47 @@ export function useMasterDot() {
         // Paginated real-time subscription (50 most recent tasks)
         unsubscribeTasks = subscribeTasksPaged(user.uid, (cloudTasks, lastDoc, hasMore) => {
           if (cloudTasks.length > 0) {
+            setCloudError(null);
             setTasks((prev) => {
+              const prevMap = new Map(prev.map((t) => [String(t.id), t]));
               const freshIds = new Set(cloudTasks.map((t) => String(t.id)));
+              // Merge: cloud wins for all fields, but preserve local evidences
+              // (dataUrl is not stored in Firestore due to 1MB doc limit)
+              const merged = cloudTasks.map((cloudTask) => {
+                const local = prevMap.get(String(cloudTask.id));
+                if (local?.evidences?.length) {
+                  return { ...cloudTask, evidences: local.evidences };
+                }
+                return cloudTask;
+              });
               const olderTasks = prev.filter((t) => !freshIds.has(String(t.id)));
-              return [...cloudTasks, ...olderTasks];
+              return [...merged, ...olderTasks];
             });
           }
           setLastTaskDoc(lastDoc);
           setHasMoreTasks(hasMore);
-        });
+        }, handleCloudError);
 
         unsubscribeProjects = subscribeProjects(user.uid, (cloudProjects) => {
-          if (cloudProjects.length > 0) setProjects(cloudProjects);
-        });
+          if (cloudProjects.length > 0) {
+            setCloudError(null);
+            setProjects(cloudProjects);
+          }
+        }, handleCloudError);
 
         unsubscribeProblems = subscribeProblems(user.uid, (cloudProblems) => {
-          if (cloudProblems.length > 0) setProblems(cloudProblems);
-        });
+          if (cloudProblems.length > 0) {
+            setCloudError(null);
+            setProblems(cloudProblems);
+          }
+        }, handleCloudError);
 
         unsubscribeKnowledge = subscribeKnowledge(user.uid, (cloudKnowledge) => {
-          if (cloudKnowledge.length > 0) setKnowledge(cloudKnowledge);
-        });
+          if (cloudKnowledge.length > 0) {
+            setCloudError(null);
+            setKnowledge(cloudKnowledge);
+          }
+        }, handleCloudError);
 
         setLoaded(true);
       });
@@ -260,14 +306,19 @@ export function useMasterDot() {
     saveAppData({ tasks, problems, knowledge, projects });
   }, [tasks, problems, knowledge, projects, loaded]);
 
+  // Write summary to SharedPreferences so the Android widget can read it
   useEffect(() => {
-    if (!loaded) return;
-    saveProductionData(productionRecords);
-  }, [productionRecords, loaded]);
-
-  useEffect(() => {
-    localStorage.setItem("productionTarget", String(productionTarget));
-  }, [productionTarget]);
+    if (!loaded || !tasks.length) return;
+    const today = todayISO();
+    const summary = {
+      total: tasks.length,
+      inProgress: tasks.filter((t) => t.status === "Em andamento").length,
+      late: tasks.filter((t) => t.status !== "Concluído" && t.endDate && t.endDate < today).length,
+      done: tasks.filter((t) => t.status === "Concluído").length,
+      updated: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+    };
+    Preferences.set({ key: "widget_data", value: JSON.stringify(summary) }).catch(() => {});
+  }, [tasks, loaded]);
 
   const today = todayISO();
 
@@ -296,99 +347,7 @@ export function useMasterDot() {
     };
   }, [tasks, today]);
 
-  const filteredMainTasks = useMemo(() => {
-    let filtered = mainTasks.filter((task) => {
-      const commentsText = (task.comments || [])
-        .map((comment) => comment.text)
-        .join(" ");
-
-      const checklistText = (task.checklist || [])
-        .map((item) => item.text)
-        .join(" ");
-
-      const linkedProblemsText = problems
-        .filter((problem) => String(problem.taskId) === String(task.id))
-        .map(
-          (problem) =>
-            `${problem.problem} ${problem.cause} ${problem.action} ${problem.responsible}`
-        )
-        .join(" ");
-
-      const text = `
-        ${task.title}
-        ${task.project}
-        ${task.notes}
-        ${task.responsible}
-        ${task.progressComment}
-        ${commentsText}
-        ${checklistText}
-        ${linkedProblemsText}
-      `.toLowerCase();
-
-      return (
-        text.includes(search.toLowerCase()) &&
-        (statusFilter === "Todos" || task.status === statusFilter) &&
-        (priorityFilter === "Todas" || task.priority === priorityFilter)
-      );
-    });
-
-    if (quickFilter === "Abertas") {
-      filtered = filtered.filter((task) => task.status !== "Concluído");
-    }
-
-    if (quickFilter === "Concluídas") {
-      filtered = filtered.filter((task) => task.status === "Concluído");
-    }
-
-    if (quickFilter === "Atrasadas") {
-      filtered = filtered.filter(
-        (task) =>
-          task.status !== "Concluído" && task.endDate && task.endDate < today
-      );
-    }
-
-    if (quickFilter === "Hoje") {
-      filtered = filtered.filter(
-        (task) => task.status !== "Concluído" && task.endDate === today
-      );
-    }
-
-    if (quickFilter === "7 dias") {
-      const limitDate = new Date();
-      limitDate.setDate(limitDate.getDate() + 7);
-
-      const limit = limitDate.toISOString().slice(0, 10);
-
-      filtered = filtered.filter(
-        (task) =>
-          task.status !== "Concluído" &&
-          task.endDate &&
-          task.endDate >= today &&
-          task.endDate <= limit
-      );
-    }
-
-    return filtered.sort((a, b) => {
-      const aDone = a.status === "Concluído";
-      const bDone = b.status === "Concluído";
-
-      if (aDone && !bDone) return 1;
-      if (!aDone && bDone) return -1;
-
-      const aDate = a.endDate || "9999-12-31";
-      const bDate = b.endDate || "9999-12-31";
-
-      return aDate.localeCompare(bDate);
-    });
-  }, [
-    mainTasks,
-    problems,
-    search,
-    statusFilter,
-    priorityFilter,
-    quickFilter,
-    today,
-  ]);
+  const filters = useTaskFilters({ mainTasks, problems });
 
   function getChildren(parentId) {
     return tasks.filter((task) => task.parentId === parentId);
@@ -522,7 +481,8 @@ export function useMasterDot() {
         checklist: [],
       };
 
-      setTasks((prev) => [newTask, ...prev]);
+      const tasksAfterAdd = [newTask, ...tasks];
+      setTasks(tasksAfterAdd);
 
       if (userId) {
         try {
@@ -554,6 +514,7 @@ export function useMasterDot() {
       setSelectedTaskId(newTask.id);
       setActiveTab("tasks");
 
+      autoScheduleIfEnabled(tasksAfterAdd);
       toast.success("Atividade salva com sucesso.");
     } catch (error) {
       console.error(error);
@@ -569,12 +530,11 @@ export function useMasterDot() {
     setTasks((prev) =>
       prev.map((task) => {
         if (task.id !== id) return task;
-
         updatedTask = {
           ...task,
           status,
+          history: [...(task.history || []), makeHistoryEntry("status", `${task.status} → ${status}`)],
         };
-
         return updatedTask;
       })
     );
@@ -596,28 +556,42 @@ export function useMasterDot() {
       return;
     }
 
-    setTasks((prev) =>
-      prev.map((task) => (task.id === editingTask.id ? editingTask : task))
-    );
+    const original = tasks.find((t) => t.id === editingTask.id);
+    const entries = [];
+    if (original) {
+      if (original.status !== editingTask.status) entries.push(`Status: ${original.status} → ${editingTask.status}`);
+      if (original.priority !== editingTask.priority) entries.push(`Prioridade: ${original.priority} → ${editingTask.priority}`);
+      if (original.endDate !== editingTask.endDate) entries.push(`Prazo: ${original.endDate} → ${editingTask.endDate}`);
+      if ((original.progress ?? 0) !== (editingTask.progress ?? 0)) entries.push(`Progresso: ${original.progress ?? 0}% → ${editingTask.progress ?? 0}%`);
+      if (original.title.trim() !== editingTask.title.trim()) entries.push("Título alterado");
+    }
+
+    const taskToSave = entries.length > 0
+      ? { ...editingTask, history: [...(editingTask.history || []), makeHistoryEntry("edit", entries.join(" · "))] }
+      : editingTask;
+
+    const tasksAfterEdit = tasks.map((task) => (task.id === taskToSave.id ? taskToSave : task));
+    setTasks(tasksAfterEdit);
 
     if (userId) {
       try {
-        await saveTaskCloud(userId, editingTask);
+        await saveTaskCloud(userId, taskForCloud(taskToSave));
       } catch (error) {
         console.warn("Atividade editada localmente, mas falhou na nuvem.", error);
       }
     }
 
     setEditingTask(null);
+    autoScheduleIfEnabled(tasksAfterEdit);
     toast.success("Atividade atualizada.");
   }
 
   async function deleteTask(id) {
-    const confirmDelete = window.confirm(
-      "Deseja realmente excluir esta atividade? As subatividades também serão excluídas."
+    const ok = await confirmFn(
+      "As subatividades também serão excluídas.",
+      "Excluir atividade?"
     );
-
-    if (!confirmDelete) return;
+    if (!ok) return;
 
     const children = tasks.filter((task) => task.parentId === id);
 
@@ -660,6 +634,7 @@ export function useMasterDot() {
       ...current,
       progressComment: text.trim(),
       comments: [...(current.comments || []), newComment],
+      history: [...(current.history || []), makeHistoryEntry("comment", text.trim().slice(0, 100))],
     };
 
     setTasks((prev) =>
@@ -808,6 +783,16 @@ export function useMasterDot() {
     toast.success("Item removido do checklist.");
   }
 
+  // Strip base64 dataUrl from evidences before saving to Firestore
+  // (Firestore has a 1MB document limit — base64 images can easily exceed it)
+  function taskForCloud(task) {
+    if (!task.evidences?.length) return task;
+    return {
+      ...task,
+      evidences: task.evidences.map(({ dataUrl, ...rest }) => rest),
+    };
+  }
+
   async function attachEvidence(taskId) {
     const current = tasks.find((task) => task.id === taskId);
 
@@ -838,23 +823,21 @@ export function useMasterDot() {
         evidences: [...(current.evidences || []), finalEvidence],
       };
 
-      setTasks((prev) =>
-        prev.map((task) => (task.id === taskId ? updatedTask : task))
+      const tasksAfterEvidence = tasks.map((task) =>
+        task.id === taskId ? updatedTask : task
       );
 
-      await saveAppData({
-        tasks: tasks.map((task) => (task.id === taskId ? updatedTask : task)),
-        problems,
-        knowledge,
-        projects,
-        productionRecords,
-      });
+      setTasks(tasksAfterEvidence);
 
+      // Persist locally (with dataUrl for display)
+      await saveAppData({ tasks: tasksAfterEvidence, problems, knowledge, projects });
+
+      // Persist to Firestore without dataUrl (Firestore 1MB doc limit)
       if (userId) {
         try {
-          await saveTaskCloud(userId, updatedTask);
+          await saveTaskCloud(userId, taskForCloud(updatedTask));
         } catch (error) {
-          console.warn("Falha ao sincronizar atividade na nuvem.", error);
+          console.warn("Falha ao sincronizar evidência na nuvem.", error);
         }
       }
 
@@ -889,7 +872,7 @@ export function useMasterDot() {
     );
 
     if (userId) {
-      await saveTaskCloud(userId, updatedTask);
+      await saveTaskCloud(userId, taskForCloud(updatedTask));
     }
   }
 
@@ -990,9 +973,8 @@ export function useMasterDot() {
       return;
     }
 
-    const confirmDelete = window.confirm("Deseja realmente excluir este projeto?");
-
-    if (!confirmDelete) return;
+    const ok = await confirmFn("Deseja realmente excluir este projeto?", "Excluir projeto?");
+    if (!ok) return;
 
     setProjects((prev) => prev.filter((project) => project.id !== id));
 
@@ -1038,24 +1020,17 @@ export function useMasterDot() {
   }
 
   async function updateProblem(problemId, updates) {
-    setProblems((prev) =>
-      prev.map((problem) =>
-        problem.id === problemId
-          ? {
-              ...problem,
-              ...updates,
-            }
-          : problem
-      )
-    );
-
+    const updated = { ...problems.find((p) => p.id === problemId), ...updates };
+    setProblems((prev) => prev.map((p) => (p.id === problemId ? updated : p)));
+    if (userId) {
+      try { await saveProblemCloud(userId, updated); } catch (e) { console.warn(e); }
+    }
     toast.success("Problema atualizado.");
   }
 
   async function deleteProblem(id) {
-    const confirmDelete = window.confirm("Deseja realmente excluir este problema?");
-
-    if (!confirmDelete) return;
+    const ok = await confirmFn("Deseja realmente excluir este problema?", "Excluir problema?");
+    if (!ok) return;
 
     setProblems((prev) => prev.filter((problem) => problem.id !== id));
 
@@ -1094,27 +1069,18 @@ export function useMasterDot() {
     setShowQuickAdd(false);
   }
 
-  function updateKnowledge(knowledgeId, updates) {
-    setKnowledge((prev) =>
-      prev.map((item) =>
-        item.id === knowledgeId
-          ? {
-              ...item,
-              ...updates,
-            }
-          : item
-      )
-    );
-
+  async function updateKnowledge(knowledgeId, updates) {
+    const updated = { ...knowledge.find((k) => k.id === knowledgeId), ...updates };
+    setKnowledge((prev) => prev.map((k) => (k.id === knowledgeId ? updated : k)));
+    if (userId) {
+      try { await saveKnowledgeCloud(userId, updated); } catch (e) { console.warn(e); }
+    }
     toast.success("Registro atualizado.");
   }
 
   async function deleteKnowledge(id) {
-    const confirmDelete = window.confirm(
-      "Deseja realmente excluir este item da base?"
-    );
-
-    if (!confirmDelete) return;
+    const ok = await confirmFn("Deseja realmente excluir este item da base?", "Excluir item?");
+    if (!ok) return;
 
     setKnowledge((prev) => prev.filter((item) => item.id !== id));
 
@@ -1129,41 +1095,26 @@ export function useMasterDot() {
     toast.success("Item excluído.");
   }
 
-  async function applyAiPriority() {
-    try {
-      toast.info("IA analisando prioridades...");
-
-      const updatedTasks = tasks.map((task) => {
-        const rec = getAiPriority(task);
-
-        return {
-          ...task,
-          priority: rec.priority,
-          aiReason: rec.reason,
-        };
-      });
-
-      setTasks(updatedTasks);
-
-      if (userId) {
-        try {
-          for (const task of updatedTasks) {
-            await saveTaskCloud(userId, task);
-          }
-        } catch (error) {
-          console.warn("Priorização salva localmente, mas falhou na nuvem.", error);
-          toast.warning(
-            "Prioridades aplicadas localmente. Falha ao sincronizar nuvem."
-          );
-        }
+  async function toggleDailyBriefing() {
+    if (dailyBriefingEnabled) {
+      await cancelDailyBriefing();
+      setDailyBriefingEnabledState(false);
+      toast.success("Resumo diário desativado.");
+    } else {
+      const ok = await scheduleDailyBriefing(tasks);
+      if (ok) {
+        setDailyBriefingEnabledState(true);
+        toast.success("Resumo diário agendado às 7h.");
+      } else {
+        toast.error("Permissão de notificação necessária.");
       }
-
-      toast.success("Priorização da IA aplicada.");
-      setActiveTab("home");
-    } catch (error) {
-      console.error(error);
-      toast.error("Erro ao aplicar priorização da IA.");
     }
+  }
+
+  function updateNotifDaysBefore(n) {
+    setNotifDaysBefore(n);
+    setNotifDaysBeforeState(n);
+    if (isNotificationsEnabled()) scheduleTaskNotifications(tasks).catch(() => {});
   }
 
   async function enableNotifications() {
@@ -1177,7 +1128,15 @@ export function useMasterDot() {
         return;
       }
 
-      toast.success(`${result.scheduled} notificação(ões) programada(s).`);
+      const { late, todayDue, next7 } = result.alerts;
+      const parts = [];
+      if (late.length)     parts.push(`${late.length} atrasada(s)`);
+      if (todayDue.length) parts.push(`${todayDue.length} hoje`);
+      if (next7.length)    parts.push(`${next7.length} em 7 dias`);
+
+      toast.success(
+        `${result.scheduled} notificação(ões) programada(s)${parts.length ? ` — ${parts.join(", ")}` : ""}.`
+      );
     } catch (error) {
       console.error(error);
       toast.error(error.message || "Erro ao configurar notificações.");
@@ -1362,64 +1321,6 @@ export function useMasterDot() {
     setImportingExcel(false);
   }
 
-  async function importProductionExcel(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    try {
-      toast.info("Importando produção...");
-
-      const imported = await importProductionFromExcel(file);
-
-      const existingKeys = new Set(
-        productionRecords.map(
-          (item) =>
-            `${item.date}|${item.time}|${item.equipment}|${item.partNumber}|${item.serial}`
-        )
-      );
-
-      const newRecords = imported.filter((item) => {
-        const key = `${item.date}|${item.time}|${item.equipment}|${item.partNumber}|${item.serial}`;
-
-        if (existingKeys.has(key)) return false;
-
-        existingKeys.add(key);
-        return true;
-      });
-
-      if (newRecords.length === 0) {
-        toast.warning("Nenhum registro novo encontrado. Dados já importados.");
-        event.target.value = "";
-        return;
-      }
-
-      setProductionRecords((prev) => [...newRecords, ...prev]);
-
-      toast.success(
-        `${newRecords.length} registro(s) novo(s) importado(s). ${
-          imported.length - newRecords.length
-        } duplicado(s) ignorado(s).`
-      );
-    } catch (error) {
-      console.error(error);
-      toast.error(error.message || "Erro ao importar produção.");
-    }
-
-    event.target.value = "";
-  }
-
-  function clearProductionRecords() {
-    const confirmClear = window.confirm(
-      "Deseja realmente limpar todos os dados de produção importados?"
-    );
-
-    if (!confirmClear) return;
-
-    setProductionRecords([]);
-    toast.success("Dados de produção limpos.");
-  }
-
   async function loadMoreTasks() {
     if (!lastTaskDoc || loadingMoreTasks || !userId) return;
     setLoadingMoreTasks(true);
@@ -1437,6 +1338,43 @@ export function useMasterDot() {
     setLoadingMoreTasks(false);
   }
 
+  async function syncAllToFirebase() {
+    if (!userId) {
+      toast.error("Faça login para sincronizar.");
+      return;
+    }
+
+    const total = tasks.length + projects.length + problems.length + knowledge.length;
+    if (total === 0) {
+      toast.info("Nenhum dado local para sincronizar.");
+      return;
+    }
+
+    toast.info(`Sincronizando ${total} item(s) com a nuvem...`, { duration: 5000 });
+
+    try {
+      const BATCH = 10;
+      const syncs = [
+        ...tasks.map((t) => () => saveTaskCloud(userId, t)),
+        ...projects.map((p) => () => saveProjectCloud(userId, p)),
+        ...problems.map((p) => () => saveProblemCloud(userId, p)),
+        ...knowledge.map((k) => () => saveKnowledgeCloud(userId, k)),
+      ];
+
+      for (let i = 0; i < syncs.length; i += BATCH) {
+        await Promise.all(syncs.slice(i, i + BATCH).map((fn) => fn()));
+      }
+
+      // Mark as synced so the automatic initial sync doesn't run again
+      localStorage.setItem(`masterdot_synced_${userId}`, "1");
+
+      toast.success(`${total} item(s) sincronizado(s) com sucesso.`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao sincronizar. Verifique a conexão.");
+    }
+  }
+
   function exportBackup() {
     const data = JSON.stringify(
       {
@@ -1444,7 +1382,6 @@ export function useMasterDot() {
         problems,
         knowledge,
         projects,
-        // productionRecords excluded — stored and managed separately
       },
       null,
       2
@@ -1475,7 +1412,6 @@ export function useMasterDot() {
     const importedProblems = data.problems || [];
     const importedKnowledge = data.knowledge || [];
     const importedProjects = data.projects || defaultProjects;
-    // productionRecords are managed separately — not restored from backup
 
     setTasks(importedTasks);
     setProblems(importedProblems);
@@ -1499,13 +1435,13 @@ export function useMasterDot() {
     toast.success("Backup restaurado com sucesso.");
   }
 
-  function toggleTaskExpanded(taskId) {
+  const toggleTaskExpanded = useCallback((taskId) => {
     setExpandedTaskIds((prev) =>
       prev.includes(taskId)
         ? prev.filter((id) => id !== taskId)
         : [...prev, taskId]
     );
-  }
+  }, []);
 
   async function updateTaskComment(taskId, commentId, text) {
     if (!text.trim()) {
@@ -1546,11 +1482,8 @@ export function useMasterDot() {
   }
 
   async function deleteTaskComment(taskId, commentId) {
-    const confirmDelete = window.confirm(
-      "Deseja realmente excluir este comentário?"
-    );
-
-    if (!confirmDelete) return;
+    const ok = await confirmFn("Deseja realmente excluir este comentário?", "Excluir comentário?");
+    if (!ok) return;
 
     const current = tasks.find((task) => task.id === taskId);
     if (!current) return;
@@ -1583,14 +1516,17 @@ export function useMasterDot() {
     toast.success("Comentário excluído.");
   }
 
-  function exportFilteredTasks() {
-    if (!filteredMainTasks.length) {
+  async function exportFilteredTasks() {
+    if (!filters.filteredMainTasks.length) {
       toast.warning("Não há atividades para exportar.");
       return;
     }
 
-    exportTasksToExcel(filteredMainTasks, "masterdot-atividades");
-    toast.success(`${filteredMainTasks.length} atividade(s) exportada(s).`);
+    try {
+      await exportTasksToExcel(filters.filteredMainTasks, "masterdot-atividades");
+    } catch (err) {
+      if (!isShareCancel(err)) toast.error("Erro ao exportar atividades.");
+    }
   }
 
   async function exportExecutiveExcel() {
@@ -1635,24 +1571,40 @@ export function useMasterDot() {
       .join("\n");
 
     const lines = [
-      `*[Master DOT] ${task.title}*`,
+      `*[MetaPulse] ${task.title}*`,
       "",
       `📁 Projeto: ${task.project || "-"}`,
       `👤 Responsável: ${responsibles}`,
       `🚦 Status: ${task.status}  |  🔴 Prioridade: ${task.priority}`,
       `📅 Início: ${task.startDate || "-"}  →  Prazo: ${task.endDate || "-"}`,
-      `📊 Progresso: ${task.progress ?? 0}%`,
+      typeof task.progress === "number" ? `📊 Progresso: ${task.progress}%` : null,
       task.notes ? `\n📝 *Descritivo:*\n${task.notes}` : "",
       task.progressComment ? `\n💬 *Último andamento:*\n${task.progressComment}` : "",
       checklist ? `\n📋 *Checklist:*\n${checklist}` : "",
       subtasks.length ? `\n🔗 Subatividades: ${subtasks.length}` : "",
     ].filter(Boolean).join("\n");
 
+    const photoEvidences = (task.evidences || []).filter((e) => e.dataUrl);
+
     try {
-      await Share.share({ text: lines, dialogTitle: "Compartilhar via WhatsApp" });
+      if (photoEvidences.length > 0) {
+        const fileUris = await Promise.all(
+          photoEvidences.map(async (e, i) => {
+            const base64 = e.dataUrl.includes(",") ? e.dataUrl.split(",")[1] : e.dataUrl;
+            const saved = await Filesystem.writeFile({
+              path: `evidencia_${task.id}_${i}.jpg`,
+              data: base64,
+              directory: Directory.Cache,
+            });
+            return saved.uri;
+          })
+        );
+        await Share.share({ text: lines, files: fileUris, dialogTitle: "Compartilhar via WhatsApp" });
+      } else {
+        await Share.share({ text: lines, dialogTitle: "Compartilhar via WhatsApp" });
+      }
     } catch (err) {
-      console.error(err);
-      toast.error("Erro ao compartilhar.");
+      if (!isShareCancel(err)) toast.error("Erro ao compartilhar.");
     }
   }
 
@@ -1662,8 +1614,7 @@ export function useMasterDot() {
       toast.info("Gerando PDF...");
       await shareTaskAsPdf(task, subtasks);
     } catch (err) {
-      console.error(err);
-      toast.error("Erro ao gerar PDF.");
+      if (!isShareCancel(err)) toast.error("Erro ao gerar PDF.");
     }
   }
 
@@ -1673,8 +1624,7 @@ export function useMasterDot() {
       toast.info("Gerando Excel...");
       await shareTaskAsExcel(task, subtasks);
     } catch (err) {
-      console.error(err);
-      toast.error("Erro ao gerar Excel.");
+      if (!isShareCancel(err)) toast.error("Erro ao gerar Excel.");
     }
   }
 
@@ -1696,6 +1646,7 @@ export function useMasterDot() {
           text: `Status alterado: ${current.status} → ${newStatus}`,
         },
       ],
+      history: [...(current.history || []), makeHistoryEntry("status", `${current.status} → ${newStatus}`)],
     };
 
     setTasks((prev) =>
@@ -1727,7 +1678,6 @@ export function useMasterDot() {
     tasks,
     setTasks,
     mainTasks,
-    filteredMainTasks,
     dashboard,
     taskAlerts,
 
@@ -1738,12 +1688,10 @@ export function useMasterDot() {
     projects,
     setProjects,
 
-    productionRecords,
-    setProductionRecords,
-    productionTarget,
-    setProductionTarget,
-    importProductionExcel,
-    clearProductionRecords,
+    ...filters,
+
+    cloudError,
+    setCloudError,
 
     showAddOptions,
     setShowAddOptions,
@@ -1776,15 +1724,6 @@ export function useMasterDot() {
     setCommentForm,
     checklistForm,
     setChecklistForm,
-
-    search,
-    setSearch,
-    statusFilter,
-    setStatusFilter,
-    priorityFilter,
-    setPriorityFilter,
-    quickFilter,
-    setQuickFilter,
 
     authForm,
     setAuthForm,
@@ -1839,9 +1778,14 @@ export function useMasterDot() {
     updateKnowledge,
     deleteKnowledge,
 
-    applyAiPriority,
+    notificationsEnabled: isNotificationsEnabled(),
+    dailyBriefingEnabled,
+    notifDaysBefore,
     enableNotifications,
+    toggleDailyBriefing,
+    updateNotifDaysBefore,
 
+    syncAllToFirebase,
     importActivitiesFromExcel,
     exportBackup,
     importBackup,
