@@ -26,10 +26,10 @@ export default function MetaPulseLogo({ iconSize = 56, layout = "icon", classNam
           <stop offset="100%" stopColor="#020617" />
         </linearGradient>
 
-        {/* Bar gradient: cyan, top-lit */}
+        {/* Bar gradient: corporate blue, top-lit */}
         <linearGradient id="mp-bar" x1="0" y1="100" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor="#0891b2" />
-          <stop offset="100%" stopColor="#22d3ee" />
+          <stop offset="0%"   stopColor="#1d4ed8" />
+          <stop offset="100%" stopColor="#3b82f6" />
         </linearGradient>
 
         {/* Soft glow for the bars + check */}
@@ -54,9 +54,9 @@ export default function MetaPulseLogo({ iconSize = 56, layout = "icon", classNam
       <rect
         x="1" y="1" width="98" height="98" rx="21"
         fill="none"
-        stroke="#22d3ee"
+        stroke="#3b82f6"
         strokeWidth="1.2"
-        strokeOpacity="0.18"
+        strokeOpacity="0.2"
       />
 
       {/* ── Clipped content ──────────────────────────────────────── */}
@@ -90,7 +90,7 @@ export default function MetaPulseLogo({ iconSize = 56, layout = "icon", classNam
       className="select-none font-bold tracking-tight text-white"
       style={{ fontSize: iconSize * 0.45 }}
     >
-      Meta<span className="text-cyan-400">Pulse</span>
+      Meta<span className="text-blue-400">Pulse</span>
     </span>
   );
 

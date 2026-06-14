@@ -156,7 +156,7 @@ export default function EmployeeSheet({ tt }) {
 
           <Button
             disabled={!form.name.trim()}
-            className="h-12 w-full rounded-2xl bg-cyan-500 text-white disabled:opacity-40"
+            className="h-12 w-full rounded-2xl bg-blue-500 text-white disabled:opacity-40"
             onClick={handleSave}
           >
             {tt.editingEmployee ? "Salvar alterações" : "Cadastrar funcionário"}

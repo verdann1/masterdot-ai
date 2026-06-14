@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateBR } from "../../utils/dateUtils";
 import {
   priorityBorder,
-  priorityColor,
   getDueState,
   isLate,
   progressColor,
@@ -33,7 +32,7 @@ const PRIORITY_STRIP = {
 
 const SWIPE_THRESHOLD = 90;
 
-function TaskItem({ app, task, compact, child = false }) {
+function TaskItem({ app, task }) {
   const late      = isLate(task);
   const critical  = task.priority === "Alta" && task.status !== "Concluído";
   const checklist = checklistInfo(task);
@@ -49,7 +48,6 @@ function TaskItem({ app, task, compact, child = false }) {
 
   // ── Swipe gesture ────────────────────────────────────────────────────────
   const x           = useMotionValue(0);
-  const dragStartX  = useRef(0);
   const isDragging  = useRef(false);
 
   const completeOpacity = useTransform(x, [0, 40, SWIPE_THRESHOLD], [0, 0.6, 1]);

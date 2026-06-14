@@ -31,8 +31,8 @@ export default function SettingsScreen({ app }) {
             </p>
             <p className="text-[10px] text-slate-500">Atrasadas</p>
           </div>
-          <div className="rounded-2xl bg-cyan-500/10 p-2.5 text-center">
-            <p className="text-lg font-bold text-cyan-300">
+          <div className="rounded-2xl bg-sky-500/10 p-2.5 text-center">
+            <p className="text-lg font-bold text-sky-300">
               {app.taskAlerts?.todayDue?.length || 0}
             </p>
             <p className="text-[10px] text-slate-500">Hoje</p>
@@ -84,7 +84,7 @@ export default function SettingsScreen({ app }) {
                   onClick={() => app.updateNotifDaysBefore(n)}
                   className={`flex-1 rounded-xl py-1.5 text-xs font-bold transition-colors ${
                     app.notifDaysBefore === n
-                      ? "bg-cyan-500 text-white"
+                      ? "bg-blue-500 text-white"
                       : "bg-slate-800 text-slate-400"
                   }`}
                 >
@@ -96,7 +96,7 @@ export default function SettingsScreen({ app }) {
         </div>
 
         <Button
-          className="mt-4 h-11 w-full rounded-2xl bg-cyan-500 text-white"
+          className="mt-4 h-11 w-full rounded-2xl bg-blue-500 text-white"
           onClick={app.enableNotifications}
         >
           <Bell className="mr-2 h-4 w-4" />

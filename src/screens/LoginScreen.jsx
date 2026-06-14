@@ -14,7 +14,7 @@ export default function LoginScreen({ app }) {
           <MetaPulseLogo iconSize={80} layout="icon" />
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight">
-              <span className="text-white">Meta</span><span className="text-cyan-400">Pulse</span>
+              <span className="text-white">Meta</span><span className="text-blue-400">Pulse</span>
             </h1>
             <p className="mt-1 text-sm text-slate-400">Gestão inteligente de atividades</p>
           </div>

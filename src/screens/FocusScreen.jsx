@@ -17,7 +17,6 @@ function pad(n) { return String(n).padStart(2, "0"); }
 
 export default function FocusScreen({ app }) {
   const [now, setNow] = useState(new Date());
-  const [celebrating, setCelebrating] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -43,11 +42,6 @@ export default function FocusScreen({ app }) {
   const total = relevant.length;
   const pct   = total > 0 ? Math.round((done.length / total) * 100) : 0;
   const allDone = total > 0 && overdue.length === 0 && todayPending.length === 0;
-
-  // Celebrate when all tasks are done
-  useEffect(() => {
-    if (allDone) setCelebrating(true);
-  }, [allDone]);
 
   function toggle(task) {
     const next = task.status === "Concluído" ? "Em andamento" : "Concluído";
@@ -77,9 +71,9 @@ export default function FocusScreen({ app }) {
           Sair
         </button>
 
-        <div className="flex items-center gap-2 rounded-2xl bg-cyan-500/10 px-3 py-1.5">
-          <Zap className="h-3.5 w-3.5 text-cyan-400" />
-          <span className="text-xs font-semibold text-cyan-300">Modo Foco</span>
+        <div className="flex items-center gap-2 rounded-2xl bg-blue-500/10 px-3 py-1.5">
+          <Zap className="h-3.5 w-3.5 text-blue-400" />
+          <span className="text-xs font-semibold text-blue-300">Modo Foco</span>
         </div>
       </div>
 
@@ -106,7 +100,7 @@ export default function FocusScreen({ app }) {
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-slate-800">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-700"
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-300 transition-all duration-700"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -156,8 +150,8 @@ export default function FocusScreen({ app }) {
       {todayPending.length > 0 && (
         <section className={`px-4 ${overdue.length > 0 ? "mt-5" : ""}`}>
           <div className="mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-cyan-400" />
-            <p className="text-sm font-bold text-cyan-300">
+            <Zap className="h-4 w-4 text-blue-400" />
+            <p className="text-sm font-bold text-blue-300">
               Hoje ({todayPending.length})
             </p>
           </div>

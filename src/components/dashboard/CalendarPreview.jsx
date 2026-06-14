@@ -54,7 +54,7 @@ function taskColor(task) {
   }
 
   if (task.endDate === today) {
-    return "bg-cyan-500/20 text-cyan-300";
+    return "bg-sky-500/20 text-sky-300";
   }
 
   return "bg-yellow-500/20 text-yellow-300";
@@ -65,7 +65,7 @@ function dotColor(task) {
 
   if (task.status === "Concluído") return "bg-emerald-400";
   if (task.endDate && task.endDate < today) return "bg-red-400";
-  if (task.endDate === today) return "bg-cyan-400";
+  if (task.endDate === today) return "bg-sky-400";
   return "bg-yellow-400";
 }
 
@@ -140,7 +140,7 @@ export default function CalendarPreview({ app }) {
                   isSelected
                     ? "border-blue-500 bg-blue-500/20 text-white"
                     : "border-slate-800 bg-slate-950 text-slate-300"
-                } ${isToday ? "ring-1 ring-cyan-400" : ""}`}
+                } ${isToday ? "ring-1 ring-sky-400" : ""}`}
               >
                 {item.day}
 

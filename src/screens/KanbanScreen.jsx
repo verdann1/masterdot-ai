@@ -109,8 +109,8 @@ export default function KanbanScreen({ app }) {
                         className={`w-full rounded-3xl border bg-slate-950 p-4 text-left transition active:scale-[0.98] ${
                           dueState.tone === "red"
                             ? "border-red-500/50"
-                            : dueState.tone === "cyan"
-                            ? "border-cyan-500/50"
+                            : dueState.tone === "sky"
+                            ? "border-sky-500/50"
                             : "border-slate-800"
                         }`}
                       >

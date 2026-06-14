@@ -30,7 +30,7 @@ export async function scheduleDailyBriefing(tasks) {
   const granted = await requestNotificationPermission();
   if (!granted) return false;
 
-  try { await LocalNotifications.cancel({ notifications: [{ id: DAILY_BRIEFING_ID }] }); } catch {}
+  try { await LocalNotifications.cancel({ notifications: [{ id: DAILY_BRIEFING_ID }] }); } catch { /* nada agendado */ }
 
   const today = todayISO();
   const open = tasks.filter((t) => t.status !== "Concluído");
@@ -61,7 +61,7 @@ export async function scheduleDailyBriefing(tasks) {
 }
 
 export async function cancelDailyBriefing() {
-  try { await LocalNotifications.cancel({ notifications: [{ id: DAILY_BRIEFING_ID }] }); } catch {}
+  try { await LocalNotifications.cancel({ notifications: [{ id: DAILY_BRIEFING_ID }] }); } catch { /* nada agendado */ }
   localStorage.removeItem(NOTIF_BRIEFING_KEY);
 }
 

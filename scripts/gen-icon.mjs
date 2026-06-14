@@ -20,8 +20,8 @@ const svg = `<svg width="1024" height="1024" viewBox="0 0 100 100" fill="none"
       <stop offset="100%" stop-color="#020617"/>
     </linearGradient>
     <linearGradient id="bar" x1="0" y1="100" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#0891b2"/>
-      <stop offset="100%" stop-color="#22d3ee"/>
+      <stop offset="0%"   stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
     </linearGradient>
     <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="blur"/>
@@ -37,7 +37,7 @@ const svg = `<svg width="1024" height="1024" viewBox="0 0 100 100" fill="none"
 
   <!-- Border -->
   <rect x="1" y="1" width="98" height="98" rx="21"
-    fill="none" stroke="#22d3ee" stroke-width="1.2" stroke-opacity="0.2"/>
+    fill="none" stroke="#3b82f6" stroke-width="1.2" stroke-opacity="0.2"/>
 
   <!-- Clipped content -->
   <g clip-path="url(#clip)">

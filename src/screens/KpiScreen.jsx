@@ -3,7 +3,7 @@ import Chart from "chart.js/auto";
 import { ArrowLeft, TrendingUp, Target, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const D = {
-  cyan:    "#22D3EE",
+  cyan:    "#38BDF8",
   blue:    "#93C5FD",
   purple:  "#C4B5FD",
   emerald: "#6EE7B7",
@@ -215,7 +215,7 @@ export default function KpiScreen({ app }) {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-cyan-400/80">Analytics</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-400/80">Analytics</p>
             <h2 className="text-xl font-black tracking-tight text-white">Painel de KPIs</h2>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function KpiScreen({ app }) {
         <div className="mt-4 grid grid-cols-2 gap-2">
           {[
             { label: "Taxa de conclusão",  value: `${kpis.completionRate}%`, color: "text-emerald-300", icon: CheckCircle2, bg: "bg-emerald-500/10" },
-            { label: "Progresso médio",    value: `${kpis.avgProgress}%`,   color: "text-cyan-300",    icon: TrendingUp,   bg: "bg-cyan-500/10"    },
+            { label: "Progresso médio",    value: `${kpis.avgProgress}%`,   color: "text-blue-300",    icon: TrendingUp,   bg: "bg-blue-500/10"    },
             { label: "Em atraso",          value: kpis.late,                color: "text-red-300",     icon: AlertTriangle,bg: "bg-red-500/10"     },
             { label: "Críticas abertas",   value: kpis.critical,            color: "text-orange-300",  icon: Target,       bg: "bg-orange-500/10"  },
           ].map(({ label, value, color, icon: Icon, bg }) => (

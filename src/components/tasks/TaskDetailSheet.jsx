@@ -37,7 +37,7 @@ function Field({ label, value }) {
 
 const ACTION_COLOR = {
   status:  "bg-blue-400",
-  comment: "bg-cyan-400",
+  comment: "bg-blue-400",
   edit:    "bg-amber-400",
 };
 
@@ -73,7 +73,7 @@ export default function TaskDetailSheet({ app }) {
                 {task.status}
               </Badge>
               {today && (
-                <Badge className="rounded-full border border-cyan-500/40 bg-cyan-500/20 text-cyan-300">
+                <Badge className="rounded-full border border-blue-500/40 bg-blue-500/20 text-blue-300">
                   Hoje
                 </Badge>
               )}
@@ -107,7 +107,7 @@ export default function TaskDetailSheet({ app }) {
               return list.length ? (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {list.map((r) => (
-                    <span key={r} className="rounded-full bg-cyan-500/15 px-2 py-0.5 text-xs text-cyan-300">
+                    <span key={r} className="rounded-full bg-blue-500/15 px-2 py-0.5 text-xs text-blue-300">
                       {r}
                     </span>
                   ))}
@@ -127,7 +127,7 @@ export default function TaskDetailSheet({ app }) {
           <div className="mt-2 rounded-2xl bg-slate-950 p-3">
             <div className="mb-1.5 flex items-center justify-between">
               <p className="text-[10px] uppercase tracking-wide text-slate-500">Progresso</p>
-              <span className={`text-sm font-bold ${done ? "text-emerald-300" : "text-cyan-300"}`}>
+              <span className={`text-sm font-bold ${done ? "text-emerald-300" : "text-blue-300"}`}>
                 {done ? "Concluída" : `${progress}%`}
               </span>
             </div>
@@ -215,7 +215,7 @@ export default function TaskDetailSheet({ app }) {
             </button>
             <button
               onClick={() => app.shareTaskExcel(task)}
-              className="flex h-12 flex-col items-center justify-center gap-1 rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-300 active:opacity-70"
+              className="flex h-12 flex-col items-center justify-center gap-1 rounded-2xl border border-blue-500/20 bg-blue-500/10 text-blue-300 active:opacity-70"
             >
               <FileSpreadsheet className="h-4 w-4" />
               <span className="text-[10px] font-semibold">Excel</span>

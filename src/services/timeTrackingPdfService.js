@@ -3,7 +3,6 @@ import autoTable from "jspdf-autotable";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import {
-  calcDayOvertime,
   calcPeriodSummary,
   getPeriodDates,
   fmtPeriodLabel,
@@ -18,7 +17,7 @@ const C = {
   surf:   [15,  23,  42],
   surf2:  [20,  30,  55],
   border: [30,  41,  59],
-  cyan:   [125, 211, 252],
+  cyan:   [96, 165, 250],
   white:  [255, 255, 255],
   text:   [203, 213, 225],
   muted:  [100, 116, 139],

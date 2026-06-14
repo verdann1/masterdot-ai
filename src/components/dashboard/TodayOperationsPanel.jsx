@@ -71,11 +71,11 @@ export default function TodayOperationsPanel({ app }) {
 
         <button
           onClick={() => openFilter("Hoje")}
-          className="rounded-3xl border border-cyan-500/20 bg-cyan-500/10 p-3 text-center transition active:scale-[0.98]"
+          className="rounded-3xl border border-sky-500/20 bg-sky-500/10 p-3 text-center transition active:scale-[0.98]"
         >
-          <CalendarDays className="mx-auto mb-1 h-5 w-5 text-cyan-300" />
-          <p className="text-lg font-bold text-cyan-300">{todayDue.length}</p>
-          <p className="text-[10px] text-cyan-200">Hoje</p>
+          <CalendarDays className="mx-auto mb-1 h-5 w-5 text-sky-300" />
+          <p className="text-lg font-bold text-sky-300">{todayDue.length}</p>
+          <p className="text-[10px] text-sky-200">Hoje</p>
         </button>
 
         <button

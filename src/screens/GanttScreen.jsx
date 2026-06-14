@@ -34,15 +34,6 @@ function barColor(task) {
   return "bg-amber-400/80";
 }
 
-function barBorder(task) {
-  const today = todayISO();
-  if (task.status === "Concluído")    return "border-emerald-400";
-  if (task.status === "Em andamento") return "border-blue-400";
-  if (task.status === "Aguardando")   return "border-purple-400";
-  if (task.endDate && task.endDate < today) return "border-red-400";
-  return "border-amber-300";
-}
-
 const STATUS_DOT = {
   "Concluído":    "bg-emerald-400",
   "Em andamento": "bg-blue-400",
@@ -151,7 +142,7 @@ export default function GanttScreen({ app }) {
             {validTasks.length} atividade(s) com datas
           </p>
         </div>
-        <CalendarDays className="h-5 w-5 text-cyan-400" />
+        <CalendarDays className="h-5 w-5 text-blue-400" />
       </div>
 
       {/* Project filter chips */}
@@ -162,7 +153,7 @@ export default function GanttScreen({ app }) {
             onClick={() => setProjectFilter(p)}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
               projectFilter === p
-                ? "bg-cyan-500 text-white"
+                ? "bg-blue-500 text-white"
                 : "bg-slate-800 text-slate-400"
             }`}
           >
@@ -180,7 +171,7 @@ export default function GanttScreen({ app }) {
               key={n}
               onClick={() => setWindowDays(n)}
               className={`rounded-xl px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                windowDays === n ? "bg-cyan-500 text-white" : "text-slate-400"
+                windowDays === n ? "bg-blue-500 text-white" : "text-slate-400"
               }`}
             >
               {n}d
@@ -197,7 +188,7 @@ export default function GanttScreen({ app }) {
         </button>
         <button
           onClick={goToday}
-          className="rounded-2xl bg-slate-800 px-3 py-1.5 text-[11px] font-semibold text-cyan-400"
+          className="rounded-2xl bg-slate-800 px-3 py-1.5 text-[11px] font-semibold text-blue-400"
         >
           Hoje
         </button>
@@ -212,7 +203,7 @@ export default function GanttScreen({ app }) {
         <button
           onClick={() => setGroupByProject((v) => !v)}
           className={`ml-auto rounded-2xl px-3 py-1.5 text-[11px] font-medium transition-colors ${
-            groupByProject ? "bg-cyan-500/20 text-cyan-300" : "bg-slate-800 text-slate-500"
+            groupByProject ? "bg-blue-500/20 text-blue-300" : "bg-slate-800 text-slate-500"
           }`}
         >
           Por projeto
@@ -249,7 +240,7 @@ export default function GanttScreen({ app }) {
                   {monthMarks.map(({ idx, label }) => (
                     <span
                       key={idx}
-                      className="absolute top-0 pl-1 text-[9px] font-bold uppercase tracking-wider text-cyan-400/70"
+                      className="absolute top-0 pl-1 text-[9px] font-bold uppercase tracking-wider text-blue-400/70"
                       style={{ left: idx * COL_W }}
                     >
                       {label}
@@ -267,12 +258,12 @@ export default function GanttScreen({ app }) {
                   Atividade
                 </div>
                 <div className="flex">
-                  {dates.map((d, i) => (
+                  {dates.map((d) => (
                     <div
                       key={d}
                       style={{ width: COL_W, height: 16 }}
                       className={`flex items-center justify-center text-[8px] font-medium
-                        ${d === today ? "text-cyan-300 font-bold" : "text-slate-600"}
+                        ${d === today ? "text-blue-300 font-bold" : "text-slate-600"}
                         ${dayNum(d) === 1 ? "border-l border-slate-700" : ""}
                       `}
                     >
@@ -285,7 +276,7 @@ export default function GanttScreen({ app }) {
               {/* Today marker */}
               {todayIdx >= 0 && (
                 <div
-                  className="pointer-events-none absolute bottom-0 z-10 w-px bg-cyan-400/60"
+                  className="pointer-events-none absolute bottom-0 z-10 w-px bg-blue-400/60"
                   style={{
                     left: LEFT_W + todayIdx * COL_W + COL_W / 2,
                     top: 34,
@@ -306,7 +297,7 @@ export default function GanttScreen({ app }) {
                         className="sticky left-0 z-20 flex items-center gap-2 bg-slate-900/60 px-3 py-1.5"
                         style={{ width: LEFT_W }}
                       >
-                        <span className="truncate text-[10px] font-bold uppercase tracking-wider text-cyan-400/80">
+                        <span className="truncate text-[10px] font-bold uppercase tracking-wider text-blue-400/80">
                           {project}
                         </span>
                       </div>
@@ -358,7 +349,7 @@ export default function GanttScreen({ app }) {
                                 key={d}
                                 style={{ width: COL_W, height: 28 }}
                                 className={`flex items-center
-                                  ${d === today ? "bg-cyan-500/5" : ""}
+                                  ${d === today ? "bg-blue-500/5" : ""}
                                   ${dayNum(d) === 1 ? "border-l border-slate-800" : ""}
                                 `}
                               >

@@ -46,11 +46,11 @@ export default function App() {
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
             <MetaPulseLogo iconSize={72} layout="icon" />
-            <div className="absolute -inset-2 animate-spin rounded-[28px] border-2 border-cyan-500 border-t-transparent" />
+            <div className="absolute -inset-2 animate-spin rounded-[28px] border-2 border-blue-500 border-t-transparent" />
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold tracking-tight">
-              <span className="text-white">Meta</span><span className="text-cyan-400">Pulse</span>
+              <span className="text-white">Meta</span><span className="text-blue-400">Pulse</span>
             </h1>
             <p className="text-sm text-slate-400">Inicializando...</p>
           </div>

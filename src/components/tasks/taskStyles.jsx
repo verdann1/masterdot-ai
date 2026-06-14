@@ -31,8 +31,8 @@ export function getDueState(task) {
   if (task.endDate === today) {
     return {
       label: "Vence hoje",
-      tone: "cyan",
-      className: "border-cyan-500/40 bg-cyan-500/15 text-cyan-300",
+      tone: "sky",
+      className: "border-sky-500/40 bg-sky-500/15 text-sky-300",
     };
   }
 

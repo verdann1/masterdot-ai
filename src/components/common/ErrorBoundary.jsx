@@ -22,7 +22,7 @@ export default class ErrorBoundary extends Component {
             </p>
             <button
               onClick={() => this.setState({ error: null })}
-              className="mt-4 rounded-xl bg-cyan-500 px-4 py-2 text-sm font-medium text-white"
+              className="mt-4 rounded-xl bg-blue-500 px-4 py-2 text-sm font-medium text-white"
             >
               Tentar novamente
             </button>

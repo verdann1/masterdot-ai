@@ -104,7 +104,7 @@ export default function TimeRecordSheet({ tt }) {
 
           <Button
             disabled={!valid}
-            className="h-12 w-full rounded-2xl bg-cyan-500 text-white disabled:opacity-40"
+            className="h-12 w-full rounded-2xl bg-blue-500 text-white disabled:opacity-40"
             onClick={() => tt.saveRecord(form)}
           >
             {form.id ? "Salvar alterações" : "Registrar ponto"}

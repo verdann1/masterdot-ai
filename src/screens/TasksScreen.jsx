@@ -3,7 +3,6 @@ import { Download, FileText, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import SelectField from "../components/common/SelectField";
 import TaskTree from "../components/tasks/TaskTree";
-import { isLate } from "../components/tasks/taskStyles";
 import { todayISO } from "../utils/dateUtils";
 
 function StatusSummary({ tasks }) {
@@ -23,7 +22,7 @@ function StatusSummary({ tasks }) {
   const items = [
     { label: "Total",        value: counts.total,      color: "text-white",        bg: "bg-slate-800"         },
     { label: "Em andamento", value: counts.inProgress,  color: "text-blue-300",     bg: "bg-blue-500/10"      },
-    { label: "Hoje",         value: counts.today,       color: "text-cyan-300",     bg: "bg-cyan-500/10"      },
+    { label: "Hoje",         value: counts.today,       color: "text-sky-300",      bg: "bg-sky-500/10"       },
     { label: "Atrasadas",    value: counts.late,        color: "text-red-300",      bg: "bg-red-500/10"       },
     { label: "Concluídas",   value: counts.done,        color: "text-emerald-300",  bg: "bg-emerald-500/10"   },
   ];
@@ -76,7 +75,7 @@ export default function TasksScreen({ app }) {
                 onClick={() => app.setQuickFilter(filter)}
                 className={`h-9 whitespace-nowrap rounded-2xl px-3.5 text-xs font-medium transition-colors ${
                   app.quickFilter === filter
-                    ? "bg-cyan-500 text-white"
+                    ? "bg-blue-500 text-white"
                     : "bg-slate-800 text-slate-300 hover:bg-slate-700"
                 }`}
               >

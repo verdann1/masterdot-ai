@@ -15,7 +15,7 @@ function highlight(text, query) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-cyan-500/30 text-cyan-200 rounded px-0.5">{text.slice(idx, idx + query.length)}</mark>
+      <mark className="bg-blue-500/30 text-blue-200 rounded px-0.5">{text.slice(idx, idx + query.length)}</mark>
       {text.slice(idx + query.length)}
     </>
   );
@@ -132,7 +132,7 @@ export default function GlobalSearchSheet({ app, onClose }) {
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-sm">
       {/* Search bar */}
       <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-4">
-        <Search className="h-5 w-5 shrink-0 text-cyan-400" />
+        <Search className="h-5 w-5 shrink-0 text-blue-400" />
         <input
           autoFocus
           type="text"

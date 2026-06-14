@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, Users, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, Users, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { todayISO } from "../utils/dateUtils";
 
 function getResponsibleName(task) {
@@ -81,7 +81,7 @@ function PersonCard({ person, onClick }) {
       {/* Progress bar */}
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-800">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-500"
+          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500"
           style={{ width: `${person.completionRate}%` }}
         />
       </div>
@@ -190,7 +190,7 @@ export default function ResponsibleDashboardScreen({ app }) {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-cyan-400/80">Responsáveis</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-400/80">Responsáveis</p>
             <h2 className="text-xl font-black tracking-tight text-white">Dashboard por pessoa</h2>
           </div>
         </div>

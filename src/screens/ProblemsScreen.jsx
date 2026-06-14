@@ -42,8 +42,8 @@ export default function ProblemsScreen({ app }) {
             </div>
 
             {linkedTask && (
-              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-3">
-                <p className="text-xs text-cyan-300">Vinculado à atividade</p>
+              <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-3">
+                <p className="text-xs text-blue-300">Vinculado à atividade</p>
                 <p className="text-sm text-white">{linkedTask.title}</p>
               </div>
             )}

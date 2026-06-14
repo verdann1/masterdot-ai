@@ -7,7 +7,7 @@ const options = [
     title: "Nova atividade",
     description: "Criar uma atividade manualmente",
     icon: ClipboardList,
-    color: "text-cyan-300 bg-cyan-500/15 border-cyan-500/20",
+    color: "text-blue-300 bg-blue-500/15 border-blue-500/20",
   },
   {
     id: "project",

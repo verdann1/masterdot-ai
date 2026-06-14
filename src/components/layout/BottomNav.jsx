@@ -26,7 +26,7 @@ const MORE_ITEMS = [
   { id: "projects",     label: "Projetos",     icon: FolderKanban, color: "text-violet-300",  bg: "bg-violet-500/12" },
   { id: "kanban",       label: "Kanban",        icon: Columns3,     color: "text-blue-300",    bg: "bg-blue-500/12"   },
   { id: "timetracking", label: "Ponto",         icon: Clock,        color: "text-emerald-300", bg: "bg-emerald-500/12"},
-  { id: "focus",        label: "Modo Foco",     icon: Zap,          color: "text-cyan-300",    bg: "bg-cyan-500/12"   },
+  { id: "focus",        label: "Modo Foco",     icon: Zap,          color: "text-blue-300",    bg: "bg-blue-500/12"   },
 ];
 
 const MORE_IDS = new Set(MORE_ITEMS.map((i) => i.id));
@@ -71,7 +71,7 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
                 {/* Handle + header */}
                 <div className="mb-5 flex items-center justify-between">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-cyan-400/70">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400/70">
                       MetaPulse
                     </p>
                     <h2 className="text-lg font-bold text-white">Navegação</h2>
@@ -94,14 +94,14 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
                         onClick={() => navigate(id)}
                         className={`flex flex-col items-center gap-2 rounded-2xl p-4 transition-all active:scale-95 ${
                           active
-                            ? "bg-cyan-500/15 ring-1 ring-cyan-500/30"
+                            ? "bg-blue-500/15 ring-1 ring-blue-500/30"
                             : bg
                         }`}
                       >
                         <span className={`${color}`}>
                           <Icon className="h-6 w-6" />
                         </span>
-                        <span className={`text-[11px] font-semibold ${active ? "text-cyan-300" : "text-slate-400"}`}>
+                        <span className={`text-[11px] font-semibold ${active ? "text-blue-300" : "text-slate-400"}`}>
                           {label}
                         </span>
                       </button>
@@ -142,9 +142,9 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
                 {active && !isAdd && (
                   <motion.div
                     layoutId="nav-active"
-                    className="absolute inset-0 rounded-[20px] bg-cyan-500/15"
+                    className="absolute inset-0 rounded-[20px] bg-blue-500/15"
                     style={{
-                      boxShadow: "0 0 18px rgba(6,182,212,0.14), inset 0 1px 0 rgba(6,182,212,0.1)",
+                      boxShadow: "inset 0 1px 0 rgba(59,130,246,0.12)",
                     }}
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
@@ -155,21 +155,21 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
                   <span
                     className="relative z-10 rounded-full p-3"
                     style={{
-                      background: "linear-gradient(135deg,#22d3ee 0%,#06b6d4 55%,#0891b2 100%)",
-                      boxShadow: "0 4px 18px rgba(6,182,212,0.5), inset 0 1px 0 rgba(255,255,255,0.18)",
+                      background: "linear-gradient(135deg,#3b82f6 0%,#2563eb 55%,#1d4ed8 100%)",
+                      boxShadow: "0 4px 16px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.18)",
                     }}
                   >
                     <Icon className="h-5 w-5 text-white" strokeWidth={2.5} />
                   </span>
                 ) : (
-                  <span className={`relative z-10 transition-colors duration-200 ${active ? "text-cyan-300" : "text-slate-500"}`}>
+                  <span className={`relative z-10 transition-colors duration-200 ${active ? "text-blue-300" : "text-slate-500"}`}>
                     <Icon className="h-[22px] w-[22px]" />
                   </span>
                 )}
 
                 {/* Label */}
                 {!isAdd && (
-                  <span className={`relative z-10 text-[10px] font-semibold leading-none tracking-wide transition-colors ${active ? "text-cyan-300" : "text-slate-600"}`}>
+                  <span className={`relative z-10 text-[10px] font-semibold leading-none tracking-wide transition-colors ${active ? "text-blue-300" : "text-slate-600"}`}>
                     {item.label}
                   </span>
                 )}
@@ -178,14 +178,14 @@ export default function BottomNav({ activeTab, setActiveTab, onAddClick }) {
                 {active && !isAdd && (
                   <motion.span
                     layoutId="nav-pip"
-                    className="absolute bottom-[3px] h-[2px] w-5 rounded-full bg-cyan-400/60"
+                    className="absolute bottom-[3px] h-[2px] w-5 rounded-full bg-blue-400/60"
                     transition={{ type: "spring", stiffness: 420, damping: 34 }}
                   />
                 )}
 
                 {/* "Mais" active dot when in secondary screen */}
                 {isMore && isMoreActive && !showMore && (
-                  <span className="absolute right-3 top-2 h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                  <span className="absolute right-3 top-2 h-1.5 w-1.5 rounded-full bg-blue-400" />
                 )}
               </button>
             );

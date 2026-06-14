@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Clock, LogIn, LogOut, Plus, Pencil, Trash2, User, Users, Calendar, BarChart2, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { fmtHours, fmtCurrency, dayLabel, getPeriodDates, fmtPeriodLabel } from "../services/timeTrackingCalc";
 import { shareTimeTrackingPdf } from "../services/timeTrackingPdfService";
 import EmployeeSheet from "../components/timetracking/EmployeeSheet";
@@ -14,7 +13,7 @@ function Tab({ id, label, icon: Icon, active, onClick }) {
     <button
       onClick={() => onClick(id)}
       className={`flex items-center gap-1.5 whitespace-nowrap rounded-2xl px-3 py-2 text-xs font-medium transition-colors ${
-        active ? "bg-cyan-500 text-white" : "bg-slate-800 text-slate-400"
+        active ? "bg-blue-500 text-white" : "bg-slate-800 text-slate-400"
       }`}
     >
       <Icon className="h-3.5 w-3.5" />
@@ -36,7 +35,7 @@ function OvertimeBadge({ minutes, value, ratePercent, isWeekend }) {
       }`}>
         {fmtHours(minutes / 60)} HE {ratePercent}%
       </span>
-      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
+      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-blue-300">
         {fmtCurrency(value)}
       </span>
     </div>
@@ -57,7 +56,7 @@ function TodayTab({ tt }) {
         <p className="text-sm text-slate-500">Nenhum funcionário cadastrado.</p>
         <button
           onClick={tt.openAddEmployee}
-          className="mt-4 rounded-2xl bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-white"
+          className="mt-4 rounded-2xl bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white"
         >
           Cadastrar primeiro funcionário
         </button>
@@ -75,7 +74,7 @@ function TodayTab({ tt }) {
             onClick={() => tt.setSelectedEmployeeId(e.id)}
             className={`flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-sm font-medium transition-colors ${
               tt.selectedEmployeeId === e.id
-                ? "bg-cyan-500 text-white"
+                ? "bg-blue-500 text-white"
                 : "bg-slate-800 text-slate-300"
             }`}
           >
@@ -196,8 +195,8 @@ function TodayTab({ tt }) {
                         </p>
                         <p className="text-[10px] text-slate-500">Hora extra</p>
                       </div>
-                      <div className="mt-2 rounded-xl bg-cyan-500/10 p-2.5 text-center">
-                        <p className="text-base font-bold text-cyan-300">{fmtCurrency(calc.overtimeValue)}</p>
+                      <div className="mt-2 rounded-xl bg-blue-500/10 p-2.5 text-center">
+                        <p className="text-base font-bold text-blue-300">{fmtCurrency(calc.overtimeValue)}</p>
                         <p className="text-[10px] text-slate-500">
                           Valor HE ({calc.ratePercent}% — {calc.isWeekend ? "fim de semana" : "dia útil"})
                         </p>
@@ -247,7 +246,7 @@ function HistoryTab({ tt }) {
             key={e.id}
             onClick={() => tt.setSelectedEmployeeId(e.id)}
             className={`shrink-0 rounded-2xl px-3 py-1.5 text-xs font-medium ${
-              tt.selectedEmployeeId === e.id ? "bg-cyan-500 text-white" : "bg-slate-800 text-slate-400"
+              tt.selectedEmployeeId === e.id ? "bg-blue-500 text-white" : "bg-slate-800 text-slate-400"
             }`}
           >
             {e.name}
@@ -263,7 +262,7 @@ function HistoryTab({ tt }) {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 text-xs text-slate-300 focus:border-cyan-500/50 focus:outline-none"
+            className="h-9 w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 text-xs text-slate-300 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
         <div className="flex-1">
@@ -272,7 +271,7 @@ function HistoryTab({ tt }) {
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 text-xs text-slate-300 focus:border-cyan-500/50 focus:outline-none"
+            className="h-9 w-full rounded-2xl border border-slate-800 bg-slate-900 px-3 text-xs text-slate-300 focus:border-blue-500/50 focus:outline-none"
           />
         </div>
         {(dateFrom || dateTo) && (
@@ -295,7 +294,7 @@ function HistoryTab({ tt }) {
 
       <button
         onClick={() => tt.openAddRecord(emp.id)}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-cyan-500/40 py-2.5 text-sm font-medium text-cyan-400"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-blue-500/40 py-2.5 text-sm font-medium text-blue-400"
       >
         <Plus className="h-4 w-4" />
         Registrar ponto manualmente
@@ -369,7 +368,7 @@ function EmployeesTab({ tt }) {
     <div className="space-y-3">
       <button
         onClick={tt.openAddEmployee}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-cyan-500/40 py-3 text-sm font-medium text-cyan-400"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-blue-500/40 py-3 text-sm font-medium text-blue-400"
       >
         <Plus className="h-4 w-4" />
         Cadastrar funcionário
@@ -510,8 +509,8 @@ function SummaryTab({ tt }) {
           </div>
 
           {s.totalOvertimeMinutes > 0 && (
-            <div className="mt-2 rounded-xl bg-cyan-500/10 p-3 text-center">
-              <p className="text-2xl font-bold text-cyan-300">{fmtCurrency(s.totalOvertimeValue)}</p>
+            <div className="mt-2 rounded-xl bg-blue-500/10 p-3 text-center">
+              <p className="text-2xl font-bold text-blue-300">{fmtCurrency(s.totalOvertimeValue)}</p>
               <p className="text-[10px] text-slate-500">
                 Valor total de HE a pagar no fechamento
               </p>
@@ -541,7 +540,7 @@ function SummaryTab({ tt }) {
                         <p className="text-[11px] font-semibold text-orange-300">
                           +{fmtHours(calc.overtimeHours)} HE ({calc.ratePercent}%)
                         </p>
-                        <p className="text-[10px] text-cyan-400">{fmtCurrency(calc.overtimeValue)}</p>
+                        <p className="text-[10px] text-blue-400">{fmtCurrency(calc.overtimeValue)}</p>
                       </>
                     ) : (
                       <p className="text-[11px] text-emerald-500">Normal</p>
@@ -551,13 +550,13 @@ function SummaryTab({ tt }) {
               ))}
 
               {/* Period total footer */}
-              <div className="mt-1 flex items-center justify-between rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-2">
+              <div className="mt-1 flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/5 px-3 py-2">
                 <p className="text-[11px] font-semibold text-slate-300">Total do período</p>
                 <div className="text-right">
                   <p className="text-[11px] font-bold text-orange-300">
                     {fmtHours(s.totalOvertimeHours)} HE
                   </p>
-                  <p className="text-xs font-bold text-cyan-300">{fmtCurrency(s.totalOvertimeValue)}</p>
+                  <p className="text-xs font-bold text-blue-300">{fmtCurrency(s.totalOvertimeValue)}</p>
                 </div>
               </div>
             </div>
