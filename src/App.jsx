@@ -10,6 +10,7 @@ import AppHeader from "./components/layout/AppHeader";
 import BottomNav from "./components/layout/BottomNav";
 import GlobalSearchSheet from "./components/layout/GlobalSearchSheet";
 import LoginScreen from "./screens/LoginScreen";
+import AwaitingApprovalScreen from "./screens/AwaitingApprovalScreen";
 
 import TaskDetailSheet from "./components/tasks/TaskDetailSheet";
 import EditTaskSheet from "./components/tasks/EditTaskSheet";
@@ -33,6 +34,7 @@ const SettingsScreen    = lazy(() => import("./screens/SettingsScreen"));
 const GanttScreen            = lazy(() => import("./screens/GanttScreen"));
 const ResponsibleDashboardScreen = lazy(() => import("./screens/ResponsibleDashboardScreen"));
 const KpiScreen                  = lazy(() => import("./screens/KpiScreen"));
+const TeamScreen                 = lazy(() => import("./screens/TeamScreen"));
 
 export default function App() {
   const { confirm, ConfirmNode } = useConfirm();
@@ -63,6 +65,10 @@ export default function App() {
     return <LoginScreen app={app} />;
   }
 
+  if (app.memberStatus !== "active") {
+    return <AwaitingApprovalScreen app={app} />;
+  }
+
   const screens = {
     home:         <HomeScreen app={app} />,
     tasks:        <TasksScreen app={app} />,
@@ -77,6 +83,7 @@ export default function App() {
     gantt:        <GanttScreen app={app} />,
     responsible:  <ResponsibleDashboardScreen app={app} />,
     kpi:          <KpiScreen app={app} />,
+    team:         <TeamScreen app={app} />,
   };
 
   return (
@@ -117,6 +124,7 @@ export default function App() {
             activeTab={app.activeTab}
             setActiveTab={app.setActiveTab}
             onAddClick={() => app.setShowAddOptions(true)}
+            isManager={app.isManager}
           />
 
           {app.showAddOptions && <AddOptionsSheet app={app} />}

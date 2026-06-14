@@ -47,6 +47,15 @@ import {
   saveKnowledgeCloud,
   deleteKnowledgeCloud,
   deleteEvidenceCloud,
+  ensureMembership,
+  subscribeMembers,
+  subscribeInvites,
+  updateMemberRole,
+  updateMemberStatus,
+  removeMember,
+  createInvite,
+  deleteInvite,
+  migrateUserDataToWorkspace,
 } from "../services/firebaseService";
 
 import {
@@ -62,12 +71,13 @@ function isShareCancel(err) {
   return msg.includes("cancel") || msg.includes("dismiss") || msg.includes("abort");
 }
 
-function makeHistoryEntry(action, detail) {
+function makeHistoryEntry(action, detail, by) {
   return {
     id: Date.now() + Math.random(),
     at: new Date().toLocaleString("pt-BR"),
     action,
     detail,
+    by: by || null,
   };
 }
 
@@ -75,6 +85,10 @@ export function useMasterDot({ confirm } = {}) {
   const confirmFn = confirm || ((msg) => Promise.resolve(window.confirm(msg)));
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
+  const [member, setMember] = useState(null);   // { uid, email, name, role, status }
+  const [members, setMembers] = useState([]);    // lista de membros (admin/gestor)
+  const [invites, setInvites] = useState([]);    // convites pendentes
   const [dailyBriefingEnabled, setDailyBriefingEnabledState] = useState(() => isDailyBriefingEnabled());
   const [notifDaysBefore, setNotifDaysBeforeState] = useState(() => getNotifDaysBefore());
 
@@ -175,6 +189,8 @@ export function useMasterDot({ confirm } = {}) {
     let unsubscribeProjects = null;
     let unsubscribeProblems = null;
     let unsubscribeKnowledge = null;
+    let unsubscribeMembers = null;
+    let unsubscribeInvites = null;
 
     const handleCloudError = () => {
       setCloudError("Falha ao sincronizar com a nuvem. Verifique sua conexão.");
@@ -190,19 +206,62 @@ export function useMasterDot({ confirm } = {}) {
         setProjects(saved.projects || defaultProjects);
       }
 
-      const unsubscribeAuth = listenAuth((user) => {
+      const unsubscribeAuth = listenAuth(async (user) => {
         if (unsubscribeTasks) unsubscribeTasks();
         if (unsubscribeProjects) unsubscribeProjects();
         if (unsubscribeProblems) unsubscribeProblems();
         if (unsubscribeKnowledge) unsubscribeKnowledge();
+        if (unsubscribeMembers) unsubscribeMembers();
+        if (unsubscribeInvites) unsubscribeInvites();
 
         if (!user) {
           setUserId(null);
+          setUserEmail(null);
+          setMember(null);
+          setMembers([]);
+          setInvites([]);
           setLoaded(true);
           return;
         }
 
         setUserId(user.uid);
+        setUserEmail(user.email || null);
+
+        // Resolve membership/papel. pending/sem acesso => não assina dados.
+        let membership = null;
+        try {
+          membership = await ensureMembership(user);
+        } catch (e) {
+          console.error("Falha ao resolver membership:", e);
+        }
+        setMember(membership);
+
+        if (!membership || membership.status !== "active") {
+          setLoaded(true);
+          return;
+        }
+
+        const isManager = membership.role === "admin" || membership.role === "gestor";
+
+        // Lista de membros/convites para a tela de Equipe (admin/gestor)
+        if (isManager) {
+          unsubscribeMembers = subscribeMembers(setMembers, () => {});
+          unsubscribeInvites = subscribeInvites(setInvites, () => {});
+        }
+
+        // Migração one-time dos dados em nuvem do admin para o workspace compartilhado
+        if (membership.role === "admin") {
+          const migFlag = `masterdot_migrated_${user.uid}`;
+          if (!localStorage.getItem(migFlag)) {
+            try {
+              const copied = await migrateUserDataToWorkspace(user.uid);
+              localStorage.setItem(migFlag, "1");
+              if (copied > 0) toast.success(`${copied} item(ns) migrado(s) para o workspace.`);
+            } catch (e) {
+              console.warn("Migração para workspace falhou (segue normal):", e);
+            }
+          }
+        }
 
         // One-time sync: push existing local data to Firebase on first login
         const syncFlag = `masterdot_synced_${user.uid}`;
@@ -298,6 +357,8 @@ export function useMasterDot({ confirm } = {}) {
       if (unsubscribeProjects) unsubscribeProjects();
       if (unsubscribeProblems) unsubscribeProblems();
       if (unsubscribeKnowledge) unsubscribeKnowledge();
+      if (unsubscribeMembers) unsubscribeMembers();
+      if (unsubscribeInvites) unsubscribeInvites();
     };
   }, []);
 
@@ -347,7 +408,11 @@ export function useMasterDot({ confirm } = {}) {
     };
   }, [tasks, today]);
 
-  const filters = useTaskFilters({ mainTasks, problems });
+  const filters = useTaskFilters({
+    mainTasks,
+    problems,
+    identity: { userId, email: userEmail, name: member?.name },
+  });
 
   function getChildren(parentId) {
     return tasks.filter((task) => task.parentId === parentId);
@@ -479,6 +544,8 @@ export function useMasterDot({ confirm } = {}) {
         comments: comment,
         evidences: [],
         checklist: [],
+        createdBy: userId || null,
+        createdByEmail: userEmail || null,
       };
 
       const tasksAfterAdd = [newTask, ...tasks];
@@ -533,7 +600,7 @@ export function useMasterDot({ confirm } = {}) {
         updatedTask = {
           ...task,
           status,
-          history: [...(task.history || []), makeHistoryEntry("status", `${task.status} → ${status}`)],
+          history: [...(task.history || []), makeHistoryEntry("status", `${task.status} → ${status}`, member?.name || userEmail)],
         };
         return updatedTask;
       })
@@ -567,7 +634,7 @@ export function useMasterDot({ confirm } = {}) {
     }
 
     const taskToSave = entries.length > 0
-      ? { ...editingTask, history: [...(editingTask.history || []), makeHistoryEntry("edit", entries.join(" · "))] }
+      ? { ...editingTask, history: [...(editingTask.history || []), makeHistoryEntry("edit", entries.join(" · "), member?.name || userEmail)] }
       : editingTask;
 
     const tasksAfterEdit = tasks.map((task) => (task.id === taskToSave.id ? taskToSave : task));
@@ -634,7 +701,7 @@ export function useMasterDot({ confirm } = {}) {
       ...current,
       progressComment: text.trim(),
       comments: [...(current.comments || []), newComment],
-      history: [...(current.history || []), makeHistoryEntry("comment", text.trim().slice(0, 100))],
+      history: [...(current.history || []), makeHistoryEntry("comment", text.trim().slice(0, 100), member?.name || userEmail)],
     };
 
     setTasks((prev) =>
@@ -1646,7 +1713,7 @@ export function useMasterDot({ confirm } = {}) {
           text: `Status alterado: ${current.status} → ${newStatus}`,
         },
       ],
-      history: [...(current.history || []), makeHistoryEntry("status", `${current.status} → ${newStatus}`)],
+      history: [...(current.history || []), makeHistoryEntry("status", `${current.status} → ${newStatus}`, member?.name || userEmail)],
     };
 
     setTasks((prev) =>
@@ -1668,9 +1735,105 @@ export function useMasterDot({ confirm } = {}) {
     return getTaskAlerts(tasks);
   }, [tasks]);
 
+  // ── Papéis / permissões ───────────────────────────────────────────────────
+  const role = member?.role || null;
+  const memberStatus = member?.status || null;
+  const isAdmin = role === "admin";
+  const isManager = role === "admin" || role === "gestor";
+
+  // Colaborador só pode editar atividades que criou ou em que é responsável.
+  function canEditTask(task) {
+    if (isManager) return true;
+    if (!task) return false;
+    if (task.createdBy && userId && task.createdBy === userId) return true;
+    const resp = Array.isArray(task.responsibles) ? task.responsibles : [];
+    const myName = member?.name || "";
+    const myEmail = (userEmail || "").toLowerCase();
+    return resp.some(
+      (r) => String(r).toLowerCase() === myEmail || (myName && String(r).toLowerCase() === myName.toLowerCase())
+    );
+  }
+
+  // ── Gestão de contas (admin) ──────────────────────────────────────────────
+  async function approveMemberAccount(uid, newRole = "colaborador") {
+    try {
+      await updateMemberRole(uid, newRole);
+      await updateMemberStatus(uid, "active");
+      toast.success("Conta aprovada.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao aprovar conta.");
+    }
+  }
+
+  async function setMemberRole(uid, newRole) {
+    try {
+      await updateMemberRole(uid, newRole);
+      toast.success("Papel atualizado.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao atualizar papel.");
+    }
+  }
+
+  async function removeMemberAccount(uid) {
+    if (uid === userId) {
+      toast.warning("Você não pode remover a própria conta.");
+      return;
+    }
+    const ok = await confirmFn("A conta perderá o acesso ao workspace.", "Remover membro?");
+    if (!ok) return;
+    try {
+      await removeMember(uid);
+      toast.success("Membro removido.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao remover membro.");
+    }
+  }
+
+  async function inviteMember(email, inviteRole = "colaborador") {
+    const clean = String(email || "").trim().toLowerCase();
+    if (!clean || !clean.includes("@")) {
+      toast.warning("Informe um e-mail válido.");
+      return;
+    }
+    try {
+      await createInvite(clean, inviteRole, userId);
+      toast.success(`Convite criado para ${clean}.`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao criar convite.");
+    }
+  }
+
+  async function cancelInvite(email) {
+    try {
+      await deleteInvite(email);
+      toast.success("Convite cancelado.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao cancelar convite.");
+    }
+  }
+
   return {
     loaded,
     userId,
+    userEmail,
+    member,
+    role,
+    memberStatus,
+    isAdmin,
+    isManager,
+    canEditTask,
+    members,
+    invites,
+    approveMemberAccount,
+    setMemberRole,
+    removeMemberAccount,
+    inviteMember,
+    cancelInvite,
 
     activeTab,
     setActiveTab,

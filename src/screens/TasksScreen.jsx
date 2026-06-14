@@ -43,6 +43,17 @@ function StatusSummary({ tasks }) {
 }
 
 export default function TasksScreen({ app }) {
+  const responsibleOptions = useMemo(() => {
+    const set = new Set();
+    (app.mainTasks || []).forEach((t) => {
+      const list = Array.isArray(t.responsibles) && t.responsibles.length
+        ? t.responsibles
+        : t.responsible ? [t.responsible] : [];
+      list.forEach((r) => r && set.add(r));
+    });
+    return ["Todos", ...[...set].sort((a, b) => a.localeCompare(b))];
+  }, [app.mainTasks]);
+
   return (
     <div className="space-y-4">
       {/* Filters card */}
@@ -82,6 +93,28 @@ export default function TasksScreen({ app }) {
                 {filter}
               </button>
             ))}
+          </div>
+
+          {/* Scope (mine/all) + responsible filter */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex rounded-2xl bg-slate-800 p-1">
+              {["Todas", "Minhas"].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => app.setScopeFilter(s)}
+                  className={`flex-1 rounded-xl py-1.5 text-xs font-semibold transition-colors ${
+                    app.scopeFilter === s ? "bg-blue-500 text-white" : "text-slate-400"
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <SelectField
+              value={app.responsibleFilter}
+              onChange={app.setResponsibleFilter}
+              options={responsibleOptions}
+            />
           </div>
 
           {/* Status + priority filters */}

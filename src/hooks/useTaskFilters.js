@@ -1,14 +1,29 @@
 import { useState, useMemo } from "react";
 import { todayISO } from "../utils/dateUtils";
 
-export function useTaskFilters({ mainTasks, problems }) {
+export function useTaskFilters({ mainTasks, problems, identity = {} }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [priorityFilter, setPriorityFilter] = useState("Todas");
   const [projectFilter, setProjectFilter] = useState("Todos");
   const [quickFilter, setQuickFilter] = useState("Todas");
+  const [scopeFilter, setScopeFilter] = useState("Todas");        // "Todas" | "Minhas"
+  const [responsibleFilter, setResponsibleFilter] = useState("Todos");
 
   const today = todayISO();
+
+  const myId = identity.userId || null;
+  const myName = (identity.name || "").toLowerCase();
+  const myEmail = (identity.email || "").toLowerCase();
+
+  function isMine(task) {
+    if (myId && task.createdBy === myId) return true;
+    const resp = Array.isArray(task.responsibles) ? task.responsibles : [];
+    return resp.some((r) => {
+      const v = String(r).toLowerCase();
+      return v === myEmail || (myName && v === myName);
+    });
+  }
 
   const filteredMainTasks = useMemo(() => {
     let filtered = mainTasks.filter((task) => {
@@ -39,11 +54,19 @@ export function useTaskFilters({ mainTasks, problems }) {
         ${linkedProblemsText}
       `.toLowerCase();
 
+      const respList = Array.isArray(task.responsibles) ? task.responsibles : [];
+      const matchesResponsible =
+        responsibleFilter === "Todos" ||
+        respList.some((r) => String(r) === responsibleFilter) ||
+        task.responsible === responsibleFilter;
+
       return (
         text.includes(search.toLowerCase()) &&
         (statusFilter === "Todos" || task.status === statusFilter) &&
         (priorityFilter === "Todas" || task.priority === priorityFilter) &&
-        (projectFilter === "Todos" || task.project === projectFilter)
+        (projectFilter === "Todos" || task.project === projectFilter) &&
+        (scopeFilter !== "Minhas" || isMine(task)) &&
+        matchesResponsible
       );
     });
 
@@ -86,7 +109,7 @@ export function useTaskFilters({ mainTasks, problems }) {
       const bDate = b.endDate || "9999-12-31";
       return aDate.localeCompare(bDate);
     });
-  }, [mainTasks, problems, search, statusFilter, priorityFilter, projectFilter, quickFilter, today]);
+  }, [mainTasks, problems, search, statusFilter, priorityFilter, projectFilter, quickFilter, scopeFilter, responsibleFilter, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     search,
@@ -99,6 +122,10 @@ export function useTaskFilters({ mainTasks, problems }) {
     setProjectFilter,
     quickFilter,
     setQuickFilter,
+    scopeFilter,
+    setScopeFilter,
+    responsibleFilter,
+    setResponsibleFilter,
     filteredMainTasks,
   };
 }

@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function emailLower() {
+      return isSignedIn() && request.auth.token.email != null
+        ? request.auth.token.email.lower()
+        : '';
+    }
+    function memberExists() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+    function memberDoc() {
+      return get(/databases/$(database)/documents/members/$(request.auth.uid)).data;
+    }
+    function isActiveMember() {
+      return memberExists() && memberDoc().status == 'active';
+    }
+    function myRole() {
+      return memberDoc().role;
+    }
+    function isAdmin() {
+      return isActiveMember() && myRole() == 'admin';
+    }
+    function isManager() {
+      return isActiveMember() && (myRole() == 'admin' || myRole() == 'gestor');
+    }
+    function owns(res) {
+      return isActiveMember() && res != null && res.data.createdBy == request.auth.uid;
+    }
+
+    // ── Membros ────────────────────────────────────────────────────────────────
+    match /members/{uid} {
+      allow read: if isActiveMember() || (isSignedIn() && request.auth.uid == uid);
+
+      // Admin gerencia qualquer membro
+      allow create, update, delete: if isAdmin();
+
+      // Auto-cadastro no primeiro login (ainda sem doc de membro)
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && (
+          // bootstrap do admin inicial
+          (emailLower() == 'verdanmatheus@outlook.com'
+            && request.resource.data.role == 'admin'
+            && request.resource.data.status == 'active')
+          // convidado: entra ativo com o papel do convite
+          || (exists(/databases/$(database)/documents/invites/$(emailLower()))
+            && request.resource.data.status == 'active'
+            && request.resource.data.role == get(/databases/$(database)/documents/invites/$(emailLower())).data.role)
+          // demais: entram como colaborador pendente
+          || (request.resource.data.role == 'colaborador'
+            && request.resource.data.status == 'pending')
+        );
+    }
+
+    // ── Convites ─────────────────────────────────────────────────────────────
+    match /invites/{email} {
+      allow read: if isActiveMember() || (isSignedIn() && emailLower() == email);
+      allow create, update: if isAdmin();
+      // admin cancela; ou o próprio convidado remove ao aceitar
+      allow delete: if isAdmin() || (isSignedIn() && emailLower() == email);
+    }
+
+    // ── Dados compartilhados do workspace ──────────────────────────────────────
+    match /tasks/{id} {
+      allow read:   if isActiveMember();
+      allow create: if isActiveMember();
+      allow update, delete: if isManager() || owns(resource);
+    }
+    match /projects/{id} {
+      allow read:   if isActiveMember();
+      allow create: if isActiveMember();
+      allow update, delete: if isManager() || owns(resource);
+    }
+    match /problems/{id} {
+      allow read:   if isActiveMember();
+      allow create: if isActiveMember();
+      allow update, delete: if isManager() || owns(resource);
+    }
+    match /knowledge/{id} {
+      allow read:   if isActiveMember();
+      allow create: if isActiveMember();
+      allow update, delete: if isManager() || owns(resource);
+    }
+
+    // ── Dados por usuário (Ponto/RH, perfil e dados legados) ────────────────────
+    match /users/{uid}/{document=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+    }
+  }
+}

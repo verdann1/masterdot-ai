@@ -1,7 +1,8 @@
 import { memo, useRef } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { AlertTriangle, User, ChevronRight, CheckCircle2, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronRight, CheckCircle2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { AvatarStack } from "../common/Avatar";
 import { formatDateBR } from "../../utils/dateUtils";
 import {
   priorityBorder,
@@ -152,10 +153,12 @@ function TaskItem({ app, task }) {
                     : [];
                   if (!list.length) return null;
                   return (
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                      <User className="h-2.5 w-2.5" />
-                      {list.slice(0, 2).join(", ")}
-                      {list.length > 2 && ` +${list.length - 2}`}
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <AvatarStack names={list} size={16} max={3} />
+                      <span className="truncate">
+                        {list.slice(0, 2).join(", ")}
+                        {list.length > 2 && ` +${list.length - 2}`}
+                      </span>
                     </span>
                   );
                 })()}
